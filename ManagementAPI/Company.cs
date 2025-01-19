@@ -3,9 +3,9 @@
     public class Company
     {
         public int AutotaskId { get; set; }
-        public string AccountName { get; set; }
-        public string SupportEmail { get; set; }
-        public string EnableEmail { get; set; }
-        public string AutoAssign { get; set; }
+        public string AccountName { get; set; } = string.Empty;
+        public string SupportEmail { get; set; } = string.Empty;
+        public string EnableEmail { get; set; } = string.Empty;
+        public string AutoAssign { get; set; } = string.Empty;
     }
 }

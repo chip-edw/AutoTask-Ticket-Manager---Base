@@ -1,0 +1,114 @@
+﻿using Microsoft.Identity.Client;
+using Serilog;
+using System.Diagnostics;
+
+namespace AutoTaskTicketManager_Base.MSGraphAPI
+{
+    public class ConfidentialClientApp
+    {
+        string[] scopes = new string[] { $"{config.ApiUrl}.default" }; // Generates a scope -> "https://graph.microsoft.com/.default"
+
+        public static AuthenticationConfig config = AuthenticationConfig.ReadFromJsonFile("appsettings.json");
+
+        private static readonly Lazy<ConfidentialClientApp> _instance =
+        new Lazy<ConfidentialClientApp>(() => new ConfidentialClientApp());
+
+        private IConfidentialClientApplication _app;
+
+        private ConfidentialClientApp()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(config.ApiUrl))
+                {
+                    throw new InvalidOperationException("ApiUrl is not configured.");
+                }
+
+                //get MSAL Logging information from Appsettings.json
+                var enableMSALLogging = config.GetValue<bool>("Serilog:LoggingSettings:EnableMSALLogging");
+
+
+                _app = ConfidentialClientApplicationBuilder.Create(config.ClientId)
+                    .WithClientSecret(config.ClientSecret)
+                    .WithAuthority(new Uri(config.Authority))
+                    .WithHttpClientFactory(() =>
+                    {
+                        var handler = new LoggingHandler(new HttpClientHandler(), config); // Pass IConfiguration
+                        return new HttpClient(handler);
+                    })
+                    .Build();
+
+            }
+            catch (Exception ex)
+            {
+#pragma warning disable CA1416 // Validate platform compatibility
+                EventLog.WriteEntry("AutotaskTicketManagementWorkerService", "ConfidentialClientApp.cs Client Secret missing. " +
+                    "Validate it exists in the configurations and Validate the SQL DB is available: ... " + ex,
+                     EventLogEntryType.Error, 999);
+#pragma warning restore CA1416 // Validate platform compatibility
+                throw new InvalidOperationException("ConfidentialClientApp failed to initialize.", ex);
+
+            }
+
+        }
+
+        public static ConfidentialClientApp Instance => _instance.Value;
+
+        public IConfidentialClientApplication GetApplication() => _app;
+
+
+
+        public async Task<String> GetAccessToken()
+        {
+            try
+            {
+                AuthenticationResult result = null;
+
+                result = await _app.AcquireTokenForClient(scopes).ExecuteAsync();
+
+                string accessToken = result.AccessToken;
+
+                //Write token to Authenticale Class
+                Authenticate.SetAccessToken(accessToken);
+
+                // Get the AuthenticationResultMetadata from the AuthenticationResult
+                AuthenticationResultMetadata metadata = result.AuthenticationResultMetadata;
+
+                DateTime expirationTime = result.ExpiresOn.DateTime;
+
+                //Write expirationTome to the authenticate class
+                Authenticate.SetTokenExpiration(expirationTime);
+
+                // Set the RefreshOn property to true and reduce the ExpiresOn by 5 minutes
+                metadata.RefreshOn = expirationTime.AddMinutes(-5);
+
+
+                return accessToken;
+            }
+            catch (MsalException msalEx)
+            {
+                Log.Error($"MSAL exception occurred: {msalEx.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Unexpected exception occurred: {ex.Message}");
+                throw;
+            }
+
+        }
+
+        public async Task DisposeAppAsync()
+        {
+            if (_app is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync();
+            }
+            else if (_app is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+    }
+}

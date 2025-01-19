@@ -1,75 +1,67 @@
+using AutoTaskTicketManager_Base.MSGraphAPI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Identity.Client;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            // Configure Serilog for logging
+            // Build configuration
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            // Configure Serilog
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
+                .ReadFrom.Configuration(configuration)
                 .CreateLogger();
+
+            // Attach global handlers for error handling
+            AttachGlobalHandlers();
 
             try
             {
                 Log.Information("Starting the application...");
 
+                Log.Information("Loading Protected Settings from DB...");
+
+                //Loads all the Protected Application Settings from the SQLite Db into the Dictionary StartupConfiguration.AppSettings
+                //Must be loaded before the LoadMsGraphSettings as the MsGraph Settings are hear to start with and are just broken out for simplicity
+                StartupConfiguration.LoadProtectedSettings();
+
                 // Create the WebApplication builder
                 var builder = WebApplication.CreateBuilder(args);
 
-                // Load configuration from appsettings.json
-                builder.Configuration
-                    .SetBasePath(AppContext.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                // Add the configuration to the builder
+                builder.Configuration.AddConfiguration(configuration);
 
-                var configuration = builder.Configuration;
+                // Register services
+                ConfigureServices(builder.Services, builder.Configuration);
+                builder.Services.AddSingleton<ConfidentialClientApp>();
+                builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
 
-                // Get the port for the management API from appsettings.json
+
+                // Configure Kestrel for the internal maintenance API
                 int managementApiPort = configuration.GetValue<int>("ManagementApiPort");
-
-                // Configure Kestrel to listen on the specified port
                 builder.WebHost.ConfigureKestrel(options =>
                 {
-                    options.ListenAnyIP(managementApiPort); // Bind to specified port
+                    options.ListenAnyIP(managementApiPort); // Bind to the specified port
                 });
 
-                // Add services for the worker service
-                builder.Services.AddHostedService<Worker>(); // Background worker
-                builder.Services.AddScoped<IWorkerService, Worker>();
-
+                // Build and run the application
                 var app = builder.Build();
 
-                // Map management API root endpoint
-                //app.MapGet("/", async context =>
-                //{
-                //    var serverAddresses = app.ServerFeatures.Get<IServerAddressesFeature>()?.Addresses;
-                //    var listeningUrl = serverAddresses?.FirstOrDefault();
-                //    await context.Response.WriteAsync($"Management API is running and listening on: {listeningUrl}");
-                //    Log.Information("Management API is UP and listening on port {managementApiPort}", managementApiPort);
-                //});
+                // Map the maintenance API endpoints
+                ConfigureEndpoints(app, managementApiPort);
 
-                // Access ServerFeatures via app.Services
-                app.MapGet("/", (IServiceProvider services) =>
-                {
-                    var server = services.GetRequiredService<IServer>();
-                    var serverAddresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
-                    var listeningUrl = serverAddresses?.FirstOrDefault() ?? $"http://localhost:{managementApiPort}";
-
-                    Log.Information("Management API is UP and listening at: {listeningUrl}", listeningUrl);
-                    return $"Management API is UP and listening on: {listeningUrl}";
-                });
-
-
-
-                // Map additional endpoints in the ManagementAPI class
-                ManagementAPI.ManagementAPI.Map(app);
-
-                app.Run(); // Run the application
+                await app.RunAsync();
             }
             catch (Exception ex)
             {
@@ -77,8 +69,61 @@ namespace AutoTaskTicketManager_Base
             }
             finally
             {
+                Log.Information("Shutting down...");
                 Log.CloseAndFlush();
             }
+        }
+
+        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+        {
+            // Register the worker service
+            services.AddHostedService<Worker>();
+
+            // Register IConfiguration as a singleton for use throughout the application
+            services.AddSingleton(configuration);
+
+            // Additional services can be registered here
+            services.AddScoped<IWorkerService, Worker>();
+        }
+
+        private static void ConfigureEndpoints(WebApplication app, int managementApiPort)
+        {
+            // Expose a default endpoint for testing the API
+            app.MapGet("/", (IServiceProvider services) =>
+            {
+                var server = services.GetRequiredService<IServer>();
+                var serverAddresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
+                var listeningUrl = serverAddresses?.FirstOrDefault() ?? $"http://localhost:{managementApiPort}";
+                Log.Information("Management API is UP and listening at: {listeningUrl}", listeningUrl);
+
+                return $"Management API is UP and listening on: {listeningUrl}";
+            });
+
+            // Map additional endpoints from the ManagementAPI class
+            ManagementAPI.ManagementAPI.Map(app);
+        }
+
+        private static void AttachGlobalHandlers()
+        {
+            // Handle Unhandled Exceptions
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                Exception ex = args.ExceptionObject as Exception;
+                Log.Fatal($"Unhandled exception: {ex?.Message}", ex);
+            };
+
+            // Handle Task Unobserved Exceptions
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                Log.Fatal($"Unobserved task exception: {args.Exception?.Message}", args.Exception);
+                args.SetObserved(); // Prevents the process from being terminated
+            };
+
+            // Handle Process Exit
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+            {
+                Log.Information("Process is exiting. Performing cleanup...");
+            };
         }
     }
 }
