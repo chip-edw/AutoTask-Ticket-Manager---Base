@@ -42,10 +42,14 @@ namespace AutoTaskTicketManager_Base
                 // Add the configuration to the builder
                 builder.Configuration.AddConfiguration(configuration);
 
-                // Register services
+                // Register Services
                 ConfigureServices(builder.Services, builder.Configuration);
                 builder.Services.AddSingleton<ConfidentialClientApp>();
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
+
+                //Register Worker
+                builder.Services.AddSingleton<IWorkerService, Worker>();
+                builder.Services.AddHostedService<Worker>();
 
 
                 // Configure Kestrel for the internal maintenance API

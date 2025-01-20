@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Serilog;
 
@@ -15,8 +16,84 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
             _workerService = workerService;
         }
 
+        public async Task TriggerDoWorkAsync()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            await _workerService.DoWorkAsync(cancellationTokenSource.Token);
+        }
+
         public static void Map(IEndpointRouteBuilder endpoints)
         {
+            #region ShutDown Application Remotely
+            endpoints.MapGet("/ATTMS/ShutDownApp", async context =>
+            {
+                try
+                {
+                    Log.Information("API call to Shutdown the application received.");
+
+                    // Resolve the application lifetime service
+                    var lifetime = context.RequestServices.GetService<IHostApplicationLifetime>();
+
+                    lifetime?.StopApplication();
+
+                    await context.Response.WriteAsync("Application restart initiated.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Failed to ShutDown the application: {ex}");
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Failed to ShutDown the application.");
+                }
+            });
+
+            #endregion
+
+            #region Restart Application Remotely
+
+            endpoints.MapGet("/ATTMS/RestartApp", async context =>
+            {
+                try
+                {
+                    Log.Information("API call to restart the application received.");
+
+                    // Get the path to the current executable
+                    var executablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+
+                    if (!string.IsNullOrEmpty(executablePath))
+                    {
+                        Log.Information($"Restarting application: {executablePath}");
+
+                        // Start a new process to restart the application
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = executablePath,
+                            UseShellExecute = true,
+                        });
+
+                        // Stop the current application
+                        var lifetime = context.RequestServices.GetService<IHostApplicationLifetime>();
+                        lifetime?.StopApplication();
+
+                        await context.Response.WriteAsync("Application restart initiated.");
+                    }
+                    else
+                    {
+                        Log.Error("Executable path not found.");
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsync("Executable path not found. Restart failed.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Failed to restart the application: {ex}");
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Failed to restart the application.");
+                }
+            });
+
+
+            #endregion
+
             #region Company Count from companies dictionary
             ////Return the current list of companies contained in the Companies.companies dictionary
             //endpoints.MapGet("/AutoTaskCompanies/CompanyList", async context =>
@@ -381,29 +458,40 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
 
 
             //Initiate service Cancellation Token
-            endpoints.MapGet("/ATTMS/StopTokenIssued", async context =>
+            endpoints.MapGet("/ATTMS/StopWorker", async context =>
             {
                 try
                 {
-                    Log.Debug("API call to stop service received - Management API - /ATTMS/StopTokenIssued from AT API");
+                    Log.Information("API call to stop service received - Management API - /ATTMS/StopTokenIssued from AT API");
 
-                    // Assuming you have access to the service provider (DI container) in your Management API setup
+                    // Access the service provider
                     var serviceProvider = context.RequestServices;
 
-                    // Resolve an instance of IWorkerService from the DI container
+                    // Resolve an instance of IWorkerService
                     var workerService = serviceProvider.GetService<IWorkerService>();
 
-                    // Now you can call the methods directly
-                    await workerService.DoWorkAsync(CancellationToken.None);
+                    // Ensure the service is resolved
+                    if (workerService == null)
+                    {
+                        Log.Error("Worker service not found.");
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsync("Worker service not found.");
+                        return;
+                    }
 
+                    // Call StopService to stop the worker
+                    workerService.StopService();
+
+                    await context.Response.WriteAsync("Worker service stop initiated.");
                 }
-
                 catch (Exception ex)
                 {
                     Log.Debug($"API Call to Stop Token Failed - Management API - /ATTMS/StopTokenIssued from AT API - {ex}");
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Failed to stop the worker service.");
                 }
-
             });
+
 
 
         }

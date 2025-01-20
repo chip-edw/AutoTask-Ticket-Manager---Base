@@ -15,7 +15,8 @@ namespace AutoTaskTicketManager_Base
         private volatile bool cancelTokenIssued = false;
 
         //private CancellationTokenSource _cancellationTokenSource;
-        private readonly CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         private readonly ConfidentialClientApp _confidentialClientApp;
 
@@ -31,9 +32,22 @@ namespace AutoTaskTicketManager_Base
 
         public async void StopService()
         {
-            Log.Information("Internal Stop service Cancellation Token Received ...");
-            await _cancellationTokenSource.CancelAsync();
-            _cancellationTokenSource.Cancel();
+            if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
+            {
+                Log.Information("Internal Stop service Cancellation Token Received ...");
+                try
+                {
+                    await _cancellationTokenSource.CancelAsync();
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Warning("Operation was already canceled.");
+                }
+                finally
+                {
+                    _cancellationTokenSource.Cancel();
+                }
+            }
             cancelTokenIssued = true;
         }
 
@@ -134,21 +148,13 @@ namespace AutoTaskTicketManager_Base
             var accessToken = await _confidentialClientApp.GetAccessToken();
             Log.Debug("Acquired Access Token for Startup");
 
-            while (!stoppingToken.IsCancellationRequested || !cancelTokenIssued == true ||
-                           !_cancellationTokenSource.Token.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested && !cancelTokenIssued)
             {
                 try
                 {
 
                     if (Authenticate.GetExpiresOn() > DateTime.UtcNow)
                     {
-                        // Check for cancelation
-                        if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
-                            cancelTokenIssued == true || _cancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            Log.Information("Cancellation requested. Exiting worker service loop. \n");
-                            break;
-                        }
 
                         Console.WriteLine("");
 
@@ -158,25 +164,8 @@ namespace AutoTaskTicketManager_Base
                         ////#####################################################
 
 
-                        // Check for cancelation
-                        if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
-                            cancelTokenIssued == true)
-                        {
-                            Log.Information("Cancellation requested. Exiting worker service loop. \n");
-                            break;
-                        }
-
                         //int unreadCount = EmailHelper.GetUnreadCount();
 
-
-
-                        // Check for cancelation
-                        if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
-                            cancelTokenIssued == true)
-                        {
-                            Log.Information("Cancellation requested. Exiting worker service loop. \n");
-                            break;
-                        }
 
 
                         //#################################################################################
@@ -192,13 +181,6 @@ namespace AutoTaskTicketManager_Base
 
                             await Task.Delay(1000, stoppingToken);
 
-                            // Check for cancelation
-                            if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
-                                cancelTokenIssued == true)
-                            {
-                                Log.Information("Cancellation requested. Exiting worker service loop. \n");
-                                break;
-                            }
                         }
                         else if (unreadCount == 0)
                         {
@@ -215,32 +197,29 @@ namespace AutoTaskTicketManager_Base
                         if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
                             cancelTokenIssued == true)
                         {
-                            Log.Information("\n Cancellation requested. Exiting worker service loop. \n");
+                            Log.Information("\n ... Cancellation requested. Exiting worker service loop... \n");
                             break;
                         }
+
                         await Task.Delay(500, stoppingToken);
                         accessToken = await _confidentialClientApp.GetAccessToken();
                         Log.Debug("Aquired Bearer Token");
                     }
 
                 }
+                catch (OperationCanceledException)
+                {
+                    Log.Information("Operation canceled. Exiting loop.");
+                    break; // Exit the loop on cancellation
+                }
                 catch (Exception ex)
                 {
-                    if (stoppingToken.IsCancellationRequested)
-                    {
-                        Log.Error($"Worker Service recieved stoppingToken Cancellation request. Stopping ATTMWS");
-                        break;
-                    }
-                    else
-                    {
-                        Log.Error($"Worker.cs Failed to acquire an Access Bearer Token. Check stuff... {ex}");
-                    }
-
-                    return;
-
+                    Log.Error($"Worker.cs Failed to acquire an Access Bearer Token. Check stuff... {ex}");
                 }
-
             }
+
+            Log.Information("Exiting ExecuteAsync loop.");
+
         }
 
 
@@ -255,16 +234,24 @@ namespace AutoTaskTicketManager_Base
             // Implement your logic for DoWorkAsync here
             // For example, you might want to call methods or perform some background work
 
-            // Your scheduled task code here
-            Console.WriteLine($"Task executed at: {DateTime.Now}");
-
-            await StopAsync(cancellationToken).ConfigureAwait(false);
-            await Task.Delay(1000, cancellationToken);
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             Log.Information("Worker stopping at:::::: {time}", DateTimeOffset.Now);
+
+            if (_cancellationTokenSource != null)
+            {
+                Log.Information("_cancellationTokenSource is not null");
+                _cancellationTokenSource.Cancel();
+            }
+
+            _cancellationTokenSource?.Dispose();
+
+
+            cancelTokenIssued = true;
+
+            Log.Information($"From StopAsync - cancelTokenIssued = {cancelTokenIssued}");
 
             //// Perform cleanup or additional tasks before stopping the worker.
             //_schedulerTimer?.Dispose();

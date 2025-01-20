@@ -17,7 +17,7 @@ namespace AutoTaskTicketManager_Base.Models
             // Get the directory of the executing assembly
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            Console.WriteLine("OnConfiguring Model Triggered in ApplicationDbContext");
+            Log.Verbose("OnConfiguring Model Triggered in ApplicationDbContext");
 
             if (exePath == null)
             {

@@ -107,7 +107,7 @@ namespace AutoTaskTicketManager_Base
 
         public static bool LoadProtectedSettings()
         {
-            Log.Information("Loading protected Settings Method Fired");
+            Log.Information("Loading Protected Settings Method Fired from StartupConfiguration");
             Log.Debug("Clearing Dictionary");
             protectedSettings.Clear();
             try
@@ -118,8 +118,6 @@ namespace AutoTaskTicketManager_Base
                     foreach (var setting in context.ConfigStore)
                     {
                         protectedSettings.Add(setting.ValueName, setting.Value);
-                        Log.Information($"Setting {setting.ValueName}, Value {setting.Value}...");
-
                     }
                 }
 

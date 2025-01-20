@@ -53,4 +53,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="ATTMS.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
