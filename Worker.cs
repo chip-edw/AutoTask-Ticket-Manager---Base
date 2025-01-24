@@ -19,10 +19,12 @@ namespace AutoTaskTicketManager_Base
 
 
         private readonly ConfidentialClientApp _confidentialClientApp;
+        private readonly EmailManager _emailManager;
 
-        public Worker(ConfidentialClientApp confidentialClientApp, ILogger<Worker> logger)
+        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager, ILogger<Worker> logger)
         {
             _confidentialClientApp = confidentialClientApp;
+            _emailManager = emailManager;
             _logger = logger;
         }
 
@@ -145,8 +147,18 @@ namespace AutoTaskTicketManager_Base
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
             int timeDelay = Int32.Parse(tD) * 1000;
 
-            var accessToken = await _confidentialClientApp.GetAccessToken();
-            Log.Debug("Acquired Access Token for Startup");
+            try
+            {
+                await _confidentialClientApp.GetAccessToken();
+                Log.Debug("Acquired Access Token for Startup");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to retrieve the MSAL Bearer Token. Error: {ErrorMessage}", ex.Message);
+
+                Log.Error("Graph API call correlation ID: {CorrelationId}");
+            }
+
 
             while (!stoppingToken.IsCancellationRequested && !cancelTokenIssued)
             {
@@ -158,10 +170,10 @@ namespace AutoTaskTicketManager_Base
 
                         Console.WriteLine("");
 
-                        ////#####################################################
-                        ////Check if any new e-mail has arrived in Inbox.
-                        //await Task.Run(EmailHelper.CheckEmail, stoppingToken);
-                        ////#####################################################
+                        //#####################################################
+                        //Check if any new e-mail has arrived in Inbox.
+                        await Task.Run(EmailManager.CheckEmail, stoppingToken);
+                        //#####################################################
 
 
                         //int unreadCount = EmailHelper.GetUnreadCount();
@@ -202,7 +214,7 @@ namespace AutoTaskTicketManager_Base
                         }
 
                         await Task.Delay(500, stoppingToken);
-                        accessToken = await _confidentialClientApp.GetAccessToken();
+                        await _confidentialClientApp.GetAccessToken();
                         Log.Debug("Aquired Bearer Token");
                     }
 

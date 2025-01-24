@@ -208,6 +208,14 @@ namespace AutoTaskTicketManager_Base
             }
 
         }
+
+        public static string GetConfig(string Tkey)
+        {
+            return protectedSettings[Tkey];
+        }
+
+
+
         #endregion
     }
 }
