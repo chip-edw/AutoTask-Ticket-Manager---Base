@@ -5,6 +5,7 @@ using Azure.Identity;
 using HtmlAgilityPack;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
+using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using System.Globalization;
@@ -19,20 +20,38 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
     public class EmailManager
     {
 
-        private static readonly ConfidentialClientApp _confidentialClientApp;
+        public static AuthenticationConfig config = AuthenticationConfig.ReadFromJsonFile("appsettings.json");
 
-        public EmailManager(ConfidentialClientApp confidentialClientApp)
+
+        private static ConfidentialClientApp _confidentialClientApp;
+
+        // Initialize the ConfidentialClientApp with dependencies
+        public static void Initialize(IConfiguration configuration, IMsalHttpClientFactory httpClientFactory)
         {
-            _confidentialClientApp = confidentialClientApp;
+            if (_confidentialClientApp == null)
+            {
+                _confidentialClientApp = new ConfidentialClientApp(configuration, httpClientFactory);
+            }
+        }
+
+        public static ConfidentialClientApp Instance
+        {
+            get
+            {
+                if (_confidentialClientApp == null)
+                    throw new InvalidOperationException("EmailManager is not initialized. Call Initialize() first.");
+                return _confidentialClientApp;
+            }
         }
 
         public static async Task<string> GetAccessTokenAsync()
         {
-            return await _confidentialClientApp.GetAccessToken();
+            // Use the singleton instance to get the token
+            return await Instance.GetAccessToken();
         }
 
 
-        public static AuthenticationConfig config = AuthenticationConfig.ReadFromJsonFile("appsettings.json");
+
 
 
         public static Int64 GetDistros(string Tkey)

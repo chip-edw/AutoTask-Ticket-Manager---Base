@@ -62,12 +62,8 @@ namespace AutoTaskTicketManager_Base
             // ##########          Begin Application Startup and Prechecks          ##########
 
             Log.Information("Preparing to start AutoTaskTicketManagement Service \n " +
-                "Just need to wait 10 sec for all Network Dependancies to finish \n\n");
+                "Waiting 10 sec to ensure all Network Dependancies available. \n\n");
             Thread.Sleep(10 * 1000);
-
-            //Loads the necessary values for the MS Graph API. Includes values nessary to retrieve the Bearer Access Token
-            //from the Azure Authentication Service
-            StartupConfiguration.LoadMsGraphConfig();
 
             //Loads the supportDistros Dictionary       
             StartupConfiguration.LoadSupportDistros();
@@ -117,8 +113,6 @@ namespace AutoTaskTicketManager_Base
 
             // ##########          Completes Application Startup and Prechecks          ##########
 
-
-            Log.Information("");
             Log.Information(" _______________________________________________________________________");
             Log.Information("|                                                                       |");
             Log.Information("|              AutoTaskTicketManagement Service Started                 |");
@@ -139,9 +133,7 @@ namespace AutoTaskTicketManager_Base
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Log.Information("\n\n");
-            Log.Information("Entering Main Worker Service ExecuteAsync Method");
-            Log.Information("\n\n");
+            Log.Information("Entering Main Worker Service ExecuteAsync Method\n");
 
             //Get the wait period at the bottom of each loop
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
