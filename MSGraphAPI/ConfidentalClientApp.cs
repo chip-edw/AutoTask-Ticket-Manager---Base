@@ -11,10 +11,13 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         private readonly IConfiguration _configuration;
         private readonly IConfidentialClientApplication _app;
         private readonly string[] _scopes;
+        private readonly Serilog.ILogger _logger;
 
         public ConfidentialClientApp(IConfiguration configuration, IMsalHttpClientFactory httpClientFactory)
         {
             _configuration = configuration;
+
+            _logger = Log.ForContext<ConfidentialClientApp>();
 
             // Get configuration values dynamically
             string apiUrl = _configuration.GetValue<string>("ApiUrl");

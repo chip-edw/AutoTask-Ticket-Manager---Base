@@ -25,6 +25,10 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         private static ConfidentialClientApp _confidentialClientApp;
 
+        private static readonly Serilog.ILogger _logger = Log.ForContext<EmailManager>();
+
+
+
         // Initialize the ConfidentialClientApp with dependencies
         public static void Initialize(IConfiguration configuration, IMsalHttpClientFactory httpClientFactory)
         {
@@ -104,7 +108,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
                 catch
                 {
-                    Log.Debug($"{fieldName} does not exist as a class field");
+                    _logger.Debug($"{fieldName} does not exist as a class field");
 
                 }
 
@@ -146,7 +150,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
                 catch
                 {
-                    Log.Debug($"{fieldName} does not exist as a class field");
+                    _logger.Debug($"{fieldName} does not exist as a class field");
 
                 }
 
@@ -269,11 +273,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                         customers.Add(customerData);
                     }
 
-                    Log.Information("Loaded Active Customers and Settings from EF Core.");
+                    _logger.Information("Loaded Active Customers and Settings from EF Core.");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Unable to read from database using EF Core", ex);
+                    _logger.Error("Unable to read from database using EF Core", ex);
                 }
             }
 
@@ -300,16 +304,16 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// <returns></returns>
         public static async Task DraftReplyAllRunAsync()
         {
-            Log.Debug("...");
-            Log.Debug("Begin Async operations to Create MS Graph Draft Reply All Message\n");
+            _logger.Debug("...");
+            _logger.Debug("Begin Async operations to Create MS Graph Draft Reply All Message\n");
 
             //##################################################
 
             //Create Draft Reply All
-            Log.Debug("await MSGraphCreateDraftReplyAll()\n");
+            _logger.Debug("await MSGraphCreateDraftReplyAll()\n");
             await MSGraphCreateDraftReplyAll();
 
-            Log.Debug("await EditAndSendDraftReplyAllMessage()\n");
+            _logger.Debug("await EditAndSendDraftReplyAllMessage()\n");
             //Test CreateAndEditDraftReplyAllMessage
             await EditAndSendDraftReplyAllMessage();
 
@@ -394,18 +398,18 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
             else if (contentType == "html")
             {
-                Log.Debug("...");
+                _logger.Debug("...");
 
                 //load HTML Style into String
-                Log.Debug("HTML e-mail detected. Loading FF HTML Styling.");
+                _logger.Debug("HTML e-mail detected. Loading FF HTML Styling.");
                 string messageStyleString = EmailService.Default.MessageStyleString;
 
                 // Load customer e-mail content into string
-                Log.Debug("Loading Customer e-mail content into string");
+                _logger.Debug("Loading Customer e-mail content into string");
                 string htmlEmail = draftReplyAllMessage.Body!.Content!.ToString();
 
                 //Get Logo
-                Log.Debug("Loading Logo for outbound e-mail body creation");
+                _logger.Debug("Loading Logo for outbound e-mail body creation");
                 string logo = GetLogo(GetField("SupportDistro"));
 
                 string logoImageString = $"<p class=MsoNormal align=right style='text-align:right'>" +
@@ -413,17 +417,17 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     $"{logo}\"" +
                     " alt = \"" + "Logo" + "\" />";
 
-                Log.Debug("...");
+                _logger.Debug("...");
                 //Load FF Reply
-                Log.Debug("Load FF Reply");
+                _logger.Debug("Load FF Reply");
                 newContent = EmailService.Default.HtmlMessageText;
 
                 //update the content br replacing format items in the string to insert Sender Name, Ticket Number, Ticket Title
-                Log.Debug("Update the content br replacing format items in the string to insert Sender Name, Ticket Number, Ticket Title");
+                _logger.Debug("Update the content br replacing format items in the string to insert Sender Name, Ticket Number, Ticket Title");
                 newContent = string.Format(newContent, senderName, ticketNumber, ticketTitle);
 
                 // Load the HTML string into an HtmlDocument object
-                Log.Debug("Create HTML Document Object");
+                _logger.Debug("Create HTML Document Object");
                 var doc = new HtmlDocument();
                 doc.LoadHtml(htmlEmail);
 
@@ -443,13 +447,13 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     "</head>" + logoImageString + newContent + "<br>" + oldContent + "</Body></html>";
 
             }
-            Log.Debug("...");
+            _logger.Debug("...");
             // Update the Draft Message Subject
-            Log.Debug("Update the Draft Message Subject");
+            _logger.Debug("Update the Draft Message Subject");
             draftReplyAllMessage.Subject = subject;
 
             // Update the draft message Body
-            Log.Debug("Update the Draft Message Body");
+            _logger.Debug("Update the Draft Message Body");
             draftReplyAllMessage.Body = new ItemBody
             {
                 ContentType = BodyType.Html,
@@ -457,24 +461,24 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             };
 
             // Save the updated draft reply all message
-            Log.Debug("Save the Updated Draft Reply All Message in MS Graph");
+            _logger.Debug("Save the Updated Draft Reply All Message in MS Graph");
             var updatedResponse = await graphClient.Users[senderEmailAddress].Messages[draftMessageId]
             .PatchAsync(draftReplyAllMessage);
 
 
             //Send the updated draft reply all message
-            Log.Debug("Send the updated Draft Reply All Message");
+            _logger.Debug("Send the updated Draft Reply All Message");
             var sendRequest = graphClient.Users[senderEmailAddress].Messages[draftMessageId].Send;
             await sendRequest.PostAsync();
 
             var finalResult = Task.CompletedTask;
             if (finalResult.IsCompletedSuccessfully == true)
             {
-                Log.Debug("EmailHelper.EditAndSendDraftReplyAllMessage - Draft ReplyAll Successfully Sent after AT Ticket Creation\n\n");
+                _logger.Debug("EmailHelper.EditAndSendDraftReplyAllMessage - Draft ReplyAll Successfully Sent after AT Ticket Creation\n\n");
             }
             else
             {
-                Log.Debug("EmailHelper.EditAndSendDraftReplyAllMessage - Issue Sending Draft Reply All after AT Ticket Creation\n\n");
+                _logger.Debug("EmailHelper.EditAndSendDraftReplyAllMessage - Issue Sending Draft Reply All after AT Ticket Creation\n\n");
             }
 
         }
@@ -567,9 +571,9 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 var apiCaller = new ProtectedApiCallHelper(httpClient);
                 var suffixUrl = emailId + "/messages/" + supportMessageId + "/createReplyAll";
 
-                Log.Verbose("...");
-                Log.Verbose($"Create Draft ReplyAll request to: {config.ApiUrl}v1.0/users/" + suffixUrl);
-                Log.Verbose("...");
+                _logger.Verbose("...");
+                _logger.Verbose($"Create Draft ReplyAll request to: {config.ApiUrl}v1.0/users/" + suffixUrl);
+                _logger.Verbose("...");
 
                 try
                 {
@@ -581,18 +585,18 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     // Trigger the patch method to mark e-mail as read
                     await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
 
-                    Log.Debug("...");
+                    _logger.Debug("...");
                     //Now go ahead and create the draft Reply All
-                    Log.Debug("Create Draft Reply All");
+                    _logger.Debug("Create Draft Reply All");
                     await apiCaller.PostDraftReplyToAllMessage($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken);
 
-                    Log.Debug("EmailHelper.MSGraphCreateDraftReplyAll -  Draft ReplyAll Created");
+                    _logger.Debug("EmailHelper.MSGraphCreateDraftReplyAll -  Draft ReplyAll Created");
 
                     return;
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug($"Draft ReplyAll Creation failed... {ex}");
+                    _logger.Debug($"Draft ReplyAll Creation failed... {ex}");
                 }
             }
 
@@ -623,15 +627,15 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     //Get the Id of the message stored in the Email class
                     await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
 
-                    Log.Verbose("\n...");
-                    Log.Verbose($"EmailHelper.MSGraphMarkMessageRead: {config.ApiUrl}v1.0/users/" + suffixUrlRx);
-                    Log.Verbose("...\n");
+                    _logger.Verbose("\n...");
+                    _logger.Verbose($"EmailHelper.MSGraphMarkMessageRead: {config.ApiUrl}v1.0/users/" + suffixUrlRx);
+                    _logger.Verbose("...\n");
 
                     return;
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug($"\n EmailHelper.MSGraphMarkMessageRead failed... {ex}");
+                    _logger.Debug($"\n EmailHelper.MSGraphMarkMessageRead failed... {ex}");
                 }
 
             }
@@ -709,7 +713,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug($" EmailHelper.MSGraphSendAdminErrorNotificationMail Failed... {ex}");
+                    _logger.Debug($" EmailHelper.MSGraphSendAdminErrorNotificationMail Failed... {ex}");
 
                 }
 
@@ -743,7 +747,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug($" EmailHelper.SendEmailToResource Failed... {ex}");
+                    _logger.Debug($" EmailHelper.SendEmailToResource Failed... {ex}");
 
                 }
 
@@ -767,8 +771,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 var suffixUrl = emailId + "/mailfolders/" + "inbox/messages" + filter;
 
 
-                Log.Verbose($"email request to: {config.ApiUrl}v1.0/users/" + suffixUrl);
-                Log.Verbose("...");
+                _logger.Verbose($"email request to: {config.ApiUrl}v1.0/users/" + suffixUrl);
+                _logger.Verbose("...");
 
 
                 await apiCaller.CallWebApiAndProcessResultASync($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken, async (result) =>
@@ -783,11 +787,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 {
                     //Get the Id of the message stored in the Email class
                     var messageId = GetField("Id");
-                    Log.Debug("...");
-                    Log.Debug($"Stored E-mail message ID.\n Message ID: {messageId}\n");
+                    _logger.Debug("...");
+                    _logger.Debug($"Stored E-mail message ID.\n Message ID: {messageId}\n");
                     var timeRemain = Authenticate.GetExpiresOn() - DateTime.UtcNow;
-                    Log.Debug($"Bearer Token active. {timeRemain} minutes remain");
-                    Log.Debug("...");
+                    _logger.Debug($"Bearer Token active. {timeRemain} minutes remain");
+                    _logger.Debug("...");
 
                     // create the url resource suffix to identify the message we are marking complete
                     var suffixUrlRx = emailId + "/messages/" + messageId;
@@ -801,9 +805,260 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
             catch (Exception ex)
             {
-                Log.Error($"Error in: EmailHelper.CheckEmail(): {ex}");
+                _logger.Error($"Error in: EmailHelper.CheckEmail(): {ex}");
             }
 
+        }
+
+
+        public static Int64 CheckSupportEmail()
+
+        {
+            string subject = null;
+            string body = null;
+            string ticketNumber = null;
+            string addressCc = null;
+
+
+
+            string rawSubject = EmailManager.GetField("Subject");
+            string rawSender = EmailManager.GetField("From");
+
+
+            //Check for empty subject. If empty return a -1 indicating do not process.
+            if (String.IsNullOrEmpty(rawSubject) is true | rawSubject.Length < 4)
+            {
+                _logger.Debug("...");
+                _logger.Warning("Detected empty Subject in inbound e-mail. Ignoring e-mail");
+                return -1;
+            }
+            else
+            {
+                _logger.Debug("...");
+                _logger.Debug($"Inbound E-mail Subject:  {rawSubject}");
+            }
+
+            //Cleanup the Subject for furthur processing.
+            subject = EmailManager.SubjectCleanup(rawSubject);
+
+            //Check for Subject Exclusion Key Words and if excluded KeyWord found return -1 indicating do not process.
+            var isExclusion = EmailManager.SubjectExclusionKeyWords(EmailManager.GetField("Subject"));
+
+            if (isExclusion.Result == true)
+            {
+                _logger.Debug("Detected Subject Exclusion Keyword. Ignoring e-mail");
+                return -1;
+            }
+
+            //Cleanup From e-mail address for futhur processing
+            var senderAddress = EmailManager.SenderCleanup(rawSender, 0);
+
+
+
+            //Check for Sender Exclusion From Email Addressess and if excluded email address found return -1 indicating do not process.
+            var isSenderExclusion = EmailManager.SenderExclusionEmailAddresses(senderAddress);
+
+            if (isSenderExclusion.Result == true)
+            {
+                _logger.Debug("Detected Sender E-mail Exclusion. Ignoring e-mail");
+                return -1;
+            }
+
+            //Check if Sender is an internal Sender Assignment Resource. If True and the Resource is marked active then update
+            //the Email class SenderAssignment bool as True. It will be used later in the TicketHandler to determine if the ticket should be assigned to the sender.
+            bool senderAssignmentExists = StartupConfiguration.autoAssignSenders.Values
+                .Any(objects =>
+                {
+                    // Extract resourceEmail and resourceActive from the object array
+                    var resourceEmail = objects.OfType<string>().ElementAtOrDefault(1); // Email is the second element
+                    var resourceActive = objects.OfType<bool>().FirstOrDefault();      // Active is the last element
+
+                    // Check if the resourceEmail matches and resourceActive is true
+                    return resourceEmail?.Equals(senderAddress, StringComparison.OrdinalIgnoreCase) == true
+                           && resourceActive == true;
+                });
+
+
+
+            if (senderAssignmentExists == true)
+            {
+                //Get the SenderAssignment status
+
+                _logger.Debug($"Sender Assign = {senderAssignmentExists} will attempt assigning ticket to sender \n ");
+
+                EmailManager.SetBool("SenderAssignment", senderAssignmentExists);
+            }
+            else
+            {
+                //if senderAssignmentExists is not true let's go ahead and update the Email Static class bool to false 
+                EmailManager.SetBool("SenderAssignment", senderAssignmentExists);
+            }
+
+
+            //Check for Ticket Number "Completed" Status in Subject
+
+            //Get ticketNumber if it exists. A result of "No Match" means there was no ticket number
+            ticketNumber = EmailManager.ReturnTicketNumberFromEmailSubject(rawSubject);
+
+            if (ticketNumber != null && ticketNumber != "No Match")
+            {
+                _logger.Debug($"Found Ticket number in Subject:  {ticketNumber}");
+                //Check for Ticket Number "Complete" Status in Subject
+                //##
+                // The second parameter being passed is to bypass the need to compare the AT CompanyID against the support distro
+                // which is not needed in this case and would not be successful since I dont have the company ID in this case
+                //My easy way of repurposing an existing Method that had wider scope without needing to change much.
+
+                string ticketStatus = TicketHandler.GetTicketByNumberUpdateTicketClass(ticketNumber, true);
+
+                if (ticketStatus == "Complete")
+                {
+                    _logger.Debug("Detected ticket exists and is in Complete Status. Ignoring e-mail");
+                    return -1;
+                }
+
+            }
+
+
+            //Get the Recipients in the TO:
+            string toRecipients = EmailManager.GetField("ToRecipients");
+
+            _logger.Debug($"\nThe TO: recipients are:  {toRecipients}");
+
+            JsonNode nodes = JsonArray.Parse(toRecipients);
+
+            foreach (JsonObject aNode in nodes.AsArray())
+            {
+                foreach (var property in aNode.ToArray())
+                {
+                    string fieldValue = property.Value.ToString();
+
+                    var emailDict = JsonValue.Parse(fieldValue);
+
+                    // Check the TO: for a Support Distro. If we find a Support Distro dont bother checking the CC:
+                    if (emailDict != null)
+                    {
+                        //parse e-mail address for a support distro
+
+
+                        string address = (string)emailDict["address"];
+
+                        if (EmailManager.GetDistros(address) >= 0)
+                        {
+                            //Found Match.  Need to add something to check if the distro is enabled...........
+                            //################################################################################
+                            _logger.Debug("...");
+                            _logger.Debug($"Process Email Found match of TO: {address} in supportDistro Dictionary\n");
+
+                            //Write support distro to Email class for later reference when looking up logo
+                            EmailManager.SetField("SupportDistro", address);
+
+                            //Get AT Id
+                            Int64 ATID = EmailManager.GetDistros(address);
+
+
+                            // Check for Duplicate Ticket before creating
+                            //  Compare title to the dictionary 'companiesTicketsNotCompleted' and make sure title not already exists
+                            bool cleanSubjctExists = StartupConfiguration.companiesTicketsNotCompleted.ContainsKey(subject);
+                            bool rawSubjectExists = StartupConfiguration.companiesTicketsNotCompleted.ContainsKey(rawSubject);
+
+                            if (cleanSubjctExists || rawSubjectExists)
+                            {
+                                //if cleaned email rawSubject or cleanSubjects exists as an open ticket title then set ATID to -1 so e-mail does not get processed
+                                ATID = -1;
+                                string existingTicketNumber = StartupConfiguration.companiesTicketsNotCompleted.GetValueOrDefault(subject);
+                                _logger.Information($"Ticket Generation skipped. Email with Subject: '{rawSubject}' already has a ticket:" +
+                                    $" {existingTicketNumber}");
+
+
+                            }
+
+                            // if the ticket title of an open ticket does not exist then ATID stays the same and processes as normal
+
+                            //We also need to update the 'StartupConfiguration.companiesTicketsNotCompleted' with the new subject soon as a new ticket is created
+                            //that way we catch duplicates right away if a customer or employee quickly replies the first e-mail without the new ticket number.
+
+
+                            return ATID;
+                        }
+
+                    }
+
+                }
+
+            }
+            _logger.Debug("...");
+            _logger.Debug("Process E-mail No TO: address match found in supportDistro Dictionary\n");
+
+            // If did not find a "Support" Distro in the TO: then Check the CC:
+            //Get the Recipients in the CC:
+            string CcRecipients = EmailManager.GetField("CcRecipients");
+
+            _logger.Debug("Moving on to check the CC: addresses for a match in the supportDistro Dictionary");
+
+            _logger.Debug($"The CC: recipients are:  {CcRecipients}");
+
+            JsonNode nodesCc = JsonArray.Parse(CcRecipients)!;
+
+            foreach (JsonObject aNodeCc in nodesCc.AsArray())
+            {
+                foreach (var propertyCc in aNodeCc!.ToArray())
+                {
+                    string fieldValueCc = propertyCc.Value!.ToString();
+
+                    var emailDictCc = JsonValue.Parse(fieldValueCc);
+
+                    // Check the CC: for a Support Distro. If we do not find a Support Distro return -1
+                    if (emailDictCc != null)
+                    {
+                        //parse e-mail address for a support distro
+                        addressCc = (string)emailDictCc["address"]!;
+
+                        Int64 foundAddress = EmailManager.GetDistros(addressCc);
+                        if (foundAddress >= 0)
+                        {
+
+                            //Found Match now do something
+                            _logger.Verbose($" \nProcess Email Found match of CC: {addressCc} in supportDistro Dictionary \n");
+
+                            //Write support distro to Email class for later reference when looking up logo                            
+                            EmailManager.SetField("SupportDistro", addressCc);
+
+                            //Get AT Id
+                            Int64 ATID = EmailManager.GetDistros(addressCc);
+
+                            // Check for Duplicate Ticket before creating
+                            //  Compare title to the dictionary 'companiesTicketsNotCompleted' and make sure title not already exists
+                            bool cleanSubjctExists = StartupConfiguration.companiesTicketsNotCompleted.ContainsKey(subject);
+                            bool rawSubjectExists = StartupConfiguration.companiesTicketsNotCompleted.ContainsKey(rawSubject);
+
+                            if (cleanSubjctExists || rawSubjectExists)
+                            {
+                                //if cleaned email rawSubject or cleanSubjects exists as an open ticket title then set ATID to -1 so e-mail does not get processed
+                                ATID = -1;
+                                string existingTicketNumber = StartupConfiguration.companiesTicketsNotCompleted.GetValueOrDefault(subject);
+                                _logger.Information($"Ticket Generation skipped. Email with Subject: '{rawSubject}' already has a ticket:" +
+                                    $" {existingTicketNumber}");
+
+                                // if the ticket title of an open ticket does not exist then ATID stays the same and processes as normal
+
+                                //We also need to update the 'AppConfig.companiesTicketsNotCompleted' with the new subject soon as a new ticket is created
+                                //that way we catch duplicates right away if a customer or employee quickly replies the first e-mail without the new ticket number.
+                            }
+
+                            return ATID;
+                        }
+
+
+                    }
+
+
+                }
+
+
+            }
+            _logger.Debug($"\n Process E-mail No CC: match for {addressCc} in supportDistro Dictionary \n");
+            return -1;
         }
 
         //################################################
@@ -822,7 +1077,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
             if (nodes!.Count == 0)
             {
-                Log.Verbose("Mailbox new unread mail count = " + nodes.Count);
+                _logger.Debug("Mailbox new unread mail count = " + nodes.Count);
 
                 SetUnreadCount(nodes.Count);
 
@@ -833,11 +1088,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
 
             {
-                Log.Verbose("Mailbox new unread mail count = " + nodes.Count);
+                _logger.Verbose("Mailbox new unread mail count = " + nodes.Count);
 
-                Log.Debug("\n\n");
-                Log.Debug("****");
-                Log.Debug("Begin Processing Unread E-mail");
+                _logger.Debug("\n\n");
+                _logger.Debug("****");
+                _logger.Debug("Begin Processing Unread E-mail");
 
                 SetUnreadCount(nodes.Count);
                 foreach (JsonObject aNode in nodes.ToArray())
@@ -858,17 +1113,17 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                         else
 
                         {
-                            Log.Verbose($"{property.Key}: is null");
+                            _logger.Verbose($"{property.Key}: is null");
                         }
 
                     }
-                    Log.Debug("...");
-                    Log.Debug("Finished loading message to class");
+                    _logger.Debug("...");
+                    _logger.Debug("Finished loading message to class");
 
                     //Process the message we just loaded. An integer is returned representing the AT Customer/Company ID.
                     // A return = -1 indicates no match was found. We only create an AT ticket on a successful match of the support distro.
 
-                    Int64 coID = ProcessEmail.CheckSupportEmail();
+                    Int64 coID = CheckSupportEmail();
 
                     //Write the coID that is associated with the Support Distro to the Email class. Later we will compare it with the 
                     //companyID returned from the AT ticket we pull.
@@ -879,7 +1134,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                         // No matching support distro was found. This message needs to be marked as Read so it is not reprocessed.
                         // This will happen when control is switched back to the calling method CallMSGraph().
                         // In fact the message will get marked as read even if there is a support group match as the branch logic is in CallMSGraph.
-                        Log.Debug($"CheckEmail.ProcessAddresses() received {coID} from ProcessEmail.CheckSupportEmail(), " +
+                        _logger.Debug($"CheckEmail.ProcessAddresses() received {coID} from ProcessEmail.CheckSupportEmail(), " +
                             $"indicating do not process. - Check ProcessEmail.CheckSupportEmail() for conditions");
 
                         return;
@@ -915,7 +1170,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
                                     //retrieve the AT Ticket Number that was saved to the Email class when the ticket was created in the step above
                                     string ticketNumber = GetField("AtTicketNo");
-                                    Log.Debug($"Ticket number created: {ticketNumber}");
+                                    _logger.Debug($"Ticket number created: {ticketNumber}");
 
                                     try
                                     {
@@ -923,18 +1178,18 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                                     }
                                     catch (Exception ex)
                                     {
-                                        Log.Warning($"\n Failed in MSGraph.EmailHelper.DraftReplyAllRunAsync() \n {ex}");
-                                        Log.Warning($"Ticket {ticketNumber} created but Draft Reply not sent\n");
+                                        _logger.Warning($"\n Failed in MSGraph.EmailHelper.DraftReplyAllRunAsync() \n {ex}");
+                                        _logger.Warning($"Ticket {ticketNumber} created but Draft Reply not sent\n");
 
-                                        MSGraphSendAdminErrorNotificationMail(ex.ToString());
+                                        await MSGraphSendAdminErrorNotificationMail(ex.ToString());
                                     }
 
                                 }
                                 else
                                 {
-                                    Log.Error($"Result: {resultValue} No Ticket Created");
+                                    _logger.Error($"Result: {resultValue} No Ticket Created");
                                     await MSGraphMarkMessageRead();
-                                    Log.Error("Email Message Marked Read to prevent reprocessing after ticket creation failure");
+                                    _logger.Error("Email Message Marked Read to prevent reprocessing after ticket creation failure");
                                 }
 
                                 return;
@@ -1053,15 +1308,12 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 // Clean up remaining artifacts
                 extractedText = CleanupExtractedText(extractedText);
 
-                // Escape backslashes for JSON compatibility
-                // extractedText = extractedText.Replace("\\", "\\\\");
-
                 return extractedText;
             }
             catch (Exception ex)
             {
                 string adminErrMsg = $"Error in ConvertHtmlToText: {ex.Message}";
-                Log.Error(adminErrMsg);
+                _logger.Error(adminErrMsg);
                 MSGraphSendAdminErrorNotificationMail(adminErrMsg);
 
                 return "Failed to extract Email Text";
@@ -1259,12 +1511,12 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
             catch (Newtonsoft.Json.JsonException)
             {
-                Log.Debug("Invalid JSON format sent to EmailHelper.SenderCleanup(sender)");
+                _logger.Debug("Invalid JSON format sent to EmailHelper.SenderCleanup(sender)");
                 return "Unknown Sender";
             }
             catch (KeyNotFoundException)
             {
-                Log.Debug("The 'name' key is not present in the JSON data sent to EmailHelper.SenderCleanup(sender)");
+                _logger.Debug("The 'name' key is not present in the JSON data sent to EmailHelper.SenderCleanup(sender)");
                 return "Unknown Sender";
             }
         }

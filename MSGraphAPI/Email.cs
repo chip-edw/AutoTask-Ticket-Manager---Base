@@ -3,7 +3,6 @@
     public static class Email
     {
         static string Id = ""; //MS Graph message ID for this e-mail
-        static string CreatedDateTime = "";
         static string LastModifiedDateTime = "";
         static string ChangeKey = "";
         static string Categories = "";
@@ -41,7 +40,6 @@
         static Email()
         {
             Id = "";
-            CreatedDateTime = "";
             LastModifiedDateTime = "";
             ChangeKey = "";
             Categories = "";
