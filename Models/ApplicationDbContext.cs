@@ -17,8 +17,6 @@ namespace AutoTaskTicketManager_Base.Models
             // Get the directory of the executing assembly
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            Log.Verbose("OnConfiguring Model Triggered in ApplicationDbContext");
-
             if (exePath == null)
             {
                 // Log the error using Serilog and throw an exception

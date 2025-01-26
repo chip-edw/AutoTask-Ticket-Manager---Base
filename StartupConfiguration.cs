@@ -107,7 +107,7 @@ namespace AutoTaskTicketManager_Base
 
         public static bool LoadProtectedSettings()
         {
-            Log.Information("Loading Protected Settings Method Fired from StartupConfiguration");
+            Log.Debug("Loading Protected Settings Method Fired from StartupConfiguration");
             Log.Debug("Clearing Dictionary");
             protectedSettings.Clear();
             try
@@ -208,6 +208,14 @@ namespace AutoTaskTicketManager_Base
             }
 
         }
+
+        public static string GetConfig(string Tkey)
+        {
+            return protectedSettings[Tkey];
+        }
+
+
+
         #endregion
     }
 }

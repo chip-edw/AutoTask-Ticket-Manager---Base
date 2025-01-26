@@ -12,6 +12,7 @@ namespace AutoTaskTicketManager_Base
 
     public class Worker : BackgroundService, IWorkerService
     {
+        private readonly Serilog.ILogger _logger;
         private volatile bool cancelTokenIssued = false;
 
         //private CancellationTokenSource _cancellationTokenSource;
@@ -19,29 +20,32 @@ namespace AutoTaskTicketManager_Base
 
 
         private readonly ConfidentialClientApp _confidentialClientApp;
+        private readonly EmailManager _emailManager;
 
-        public Worker(ConfidentialClientApp confidentialClientApp, ILogger<Worker> logger)
+        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager, ILogger<Worker> logger)
         {
             _confidentialClientApp = confidentialClientApp;
-            _logger = logger;
+            _emailManager = emailManager;
+            //_logger = logger;
+            _logger = Log.ForContext<Worker>();
         }
 
 
-        private readonly ILogger<Worker> _logger;
+
 
 
         public async void StopService()
         {
             if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
             {
-                Log.Information("Internal Stop service Cancellation Token Received ...");
+                _logger.Information("Internal Stop service Cancellation Token Received ...");
                 try
                 {
                     await _cancellationTokenSource.CancelAsync();
                 }
                 catch (OperationCanceledException)
                 {
-                    Log.Warning("Operation was already canceled.");
+                    _logger.Warning("Operation was already canceled.");
                 }
                 finally
                 {
@@ -57,15 +61,13 @@ namespace AutoTaskTicketManager_Base
 
             //Get OS 
             var os = StartupConfiguration.DetermineOS();
+
+
             // ##########          Begin Application Startup and Prechecks          ##########
 
-            Log.Information("Preparing to start AutoTaskTicketManagement Service \n " +
-                "Just need to wait 10 sec for all Network Dependancies to finish \n\n");
+            _logger.Information("Preparing to start AutoTaskTicketManagement Service \n " +
+                "Waiting 10 sec to ensure all Network Dependancies available. \n\n");
             Thread.Sleep(10 * 1000);
-
-            //Loads the necessary values for the MS Graph API. Includes values nessary to retrieve the Bearer Access Token
-            //from the Azure Authentication Service
-            StartupConfiguration.LoadMsGraphConfig();
 
             //Loads the supportDistros Dictionary       
             StartupConfiguration.LoadSupportDistros();
@@ -115,38 +117,39 @@ namespace AutoTaskTicketManager_Base
 
             // ##########          Completes Application Startup and Prechecks          ##########
 
-
-            Log.Information("");
-            Log.Information(" _______________________________________________________________________");
-            Log.Information("|                                                                       |");
-            Log.Information("|              AutoTaskTicketManagement Service Started                 |");
-            Log.Information("|   Protected App Settings Retrieved from SQL and loaded into Memory    |");
-            Log.Information("|                                                                       |");
-            Log.Information($"                   Application version: {assemblyVersion}");
-            Log.Information("|_______________________________________________________________________|");
-            Log.Information("\r\n\r\n");
+            _logger.Information(" ____________________________________________");
+            _logger.Information("|                                            |");
+            _logger.Information("|     AutoTask Ticket Management Service     |");
+            _logger.Information("|                                            |");
+            _logger.Information($"|        Application version: {assemblyVersion}        |");
+            _logger.Information("|____________________________________________|");
+            _logger.Information("\r\n\r\n");
 
 
-
-            // When done testing put return back in front of base
-            //return base.StartAsync(cancellationToken);
             await base.StartAsync(cancellationToken);
-
         }
 
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Log.Information("\n\n");
-            Log.Information("Entering Main Worker Service ExecuteAsync Method");
-            Log.Information("\n\n");
+            _logger.Information("Entering Main Worker Service ExecuteAsync Method\n");
 
             //Get the wait period at the bottom of each loop
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
             int timeDelay = Int32.Parse(tD) * 1000;
 
-            var accessToken = await _confidentialClientApp.GetAccessToken();
-            Log.Debug("Acquired Access Token for Startup");
+            try
+            {
+                await _confidentialClientApp.GetAccessToken();
+                _logger.Debug("Acquired Access Token for Startup");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to retrieve the MSAL Bearer Token. Error: {ErrorMessage}", ex.Message);
+
+                _logger.Error("Graph API call correlation ID: {CorrelationId}");
+            }
+
 
             while (!stoppingToken.IsCancellationRequested && !cancelTokenIssued)
             {
@@ -158,35 +161,35 @@ namespace AutoTaskTicketManager_Base
 
                         Console.WriteLine("");
 
-                        ////#####################################################
-                        ////Check if any new e-mail has arrived in Inbox.
-                        //await Task.Run(EmailHelper.CheckEmail, stoppingToken);
-                        ////#####################################################
+                        //#####################################################
+                        //Check if any new e-mail has arrived in Inbox.
+                        await Task.Run(EmailManager.CheckEmail, stoppingToken);
+                        //#####################################################
 
 
-                        //int unreadCount = EmailHelper.GetUnreadCount();
+                        int unreadCount = EmailManager.GetUnreadCount();
 
 
 
                         //#################################################################################
                         // Logic for managing Unread e-mails
                         // Remove the following resetting of the var unreadCount as functionality is added
-                        int unreadCount = 0;
+                        //int unreadCount = 0;
                         //#################################################################################
 
 
                         if (unreadCount > 0)
                         {
-                            Log.Debug($"Messages to process: {unreadCount}.  0 count of messages are only recorded in verbose logging mode\n");
+                            _logger.Debug($"Messages to process: {unreadCount}.  0 count of messages are only recorded in verbose logging mode\n");
 
                             await Task.Delay(1000, stoppingToken);
 
                         }
                         else if (unreadCount == 0)
                         {
-                            Log.Verbose("...");
-                            Log.Verbose($"No Messages to Process pausing for {timeDelay} seconds. \nSet in SQL DB AppConfig Table under TimeDelay");
-                            Log.Verbose("Worker Loop - Pre Schedule");
+                            _logger.Verbose("...");
+                            _logger.Verbose($"No Messages to Process pausing for {timeDelay} seconds. \nSet in SQL DB AppConfig Table under TimeDelay");
+                            _logger.Verbose("Worker Loop - Pre Schedule");
                             await Task.Delay(timeDelay, stoppingToken); //Pausing for seconds set in SQL DB AppConfig Table under TimeDelay
 
                         }
@@ -197,28 +200,28 @@ namespace AutoTaskTicketManager_Base
                         if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
                             cancelTokenIssued == true)
                         {
-                            Log.Information("\n ... Cancellation requested. Exiting worker service loop... \n");
+                            _logger.Information("\n ... Cancellation requested. Exiting worker service loop... \n");
                             break;
                         }
 
                         await Task.Delay(500, stoppingToken);
-                        accessToken = await _confidentialClientApp.GetAccessToken();
-                        Log.Debug("Aquired Bearer Token");
+                        await _confidentialClientApp.GetAccessToken();
+                        _logger.Debug("Aquired Bearer Token");
                     }
 
                 }
                 catch (OperationCanceledException)
                 {
-                    Log.Information("Operation canceled. Exiting loop.");
+                    _logger.Information("Operation canceled. Exiting loop.");
                     break; // Exit the loop on cancellation
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"Worker.cs Failed to acquire an Access Bearer Token. Check stuff... {ex}");
+                    _logger.Error($"Worker.cs Failed to acquire an Access Bearer Token. Check stuff... {ex}");
                 }
             }
 
-            Log.Information("Exiting ExecuteAsync loop.");
+            _logger.Information("Exiting ExecuteAsync loop.");
 
         }
 
@@ -238,11 +241,11 @@ namespace AutoTaskTicketManager_Base
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            Log.Information("Worker stopping at:::::: {time}", DateTimeOffset.Now);
+            _logger.Information("Worker stopping at:::::: {time}", DateTimeOffset.Now);
 
             if (_cancellationTokenSource != null)
             {
-                Log.Information("_cancellationTokenSource is not null");
+                _logger.Information("_cancellationTokenSource is not null");
                 _cancellationTokenSource.Cancel();
             }
 
@@ -251,7 +254,7 @@ namespace AutoTaskTicketManager_Base
 
             cancelTokenIssued = true;
 
-            Log.Information($"From StopAsync - cancelTokenIssued = {cancelTokenIssued}");
+            _logger.Information($"From StopAsync - cancelTokenIssued = {cancelTokenIssued}");
 
             //// Perform cleanup or additional tasks before stopping the worker.
             //_schedulerTimer?.Dispose();

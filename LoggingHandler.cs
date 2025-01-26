@@ -5,10 +5,12 @@ namespace AutoTaskTicketManager_Base
     public class LoggingHandler : DelegatingHandler
     {
         private readonly IConfiguration _configuration;
+        private readonly Serilog.ILogger _logger;
 
         public LoggingHandler(HttpMessageHandler innerHandler, IConfiguration configuration) : base(innerHandler)
         {
             _configuration = configuration;
+            _logger = Log.ForContext<LoggingHandler>();
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

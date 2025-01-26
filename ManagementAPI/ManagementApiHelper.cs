@@ -2,7 +2,7 @@
 using System.Diagnostics;
 
 
-namespace ATTMWS_L.ManagementAPI
+namespace AutoTaskTicketManager_Base.ManagementAPI
 {
 
     public class ManagementApiHelper
@@ -11,8 +11,6 @@ namespace ATTMWS_L.ManagementAPI
         public ManagementApiHelper()
         {
         }
-
-
 
         public static async void TestManagementAPI()
         {
@@ -84,6 +82,23 @@ namespace ATTMWS_L.ManagementAPI
 
                 return result;
             }
+        }
+
+        public static async Task<List<string>> GetSubjectExclusionKeyWordsFromList()
+        {
+            //Return the StartupConfiguration public List subjectExclusionKeyWordList
+            //return StartupConfiguration.subjectExclusionKeyWordList;
+            List<string> fakeList = new List<string> { "1", "2", "3", "4", "5" };
+            return fakeList;
+
+        }
+
+
+        public static async Task<List<string>> GetSenderExclusionsFromList()
+        {
+            //Return the StartupConfiguration public List subjectExclusionKeyWordList
+            return StartupConfiguration.senderExclusionsList;
+
         }
     }
 }

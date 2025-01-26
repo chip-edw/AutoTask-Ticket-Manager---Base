@@ -18,6 +18,10 @@ namespace AutoTaskTicketManager_Base
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
 
+            var httpClientFactory = new MsalHttpClientFactory(configuration);
+
+
+
             // Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)
@@ -28,16 +32,35 @@ namespace AutoTaskTicketManager_Base
 
             try
             {
-                Log.Information("Starting the application...");
+                Log.ForContext("SourceContext", "Microsoft.Hosting.Lifetime")
+                    .Information("Testing Microsoft.Hosting.Lifetime log capture.");
 
-                Log.Information("Loading Protected Settings from DB...");
+                Log.Information($"Begining {nameof(StartupConfiguration)}\n");
+
 
                 //Loads all the Protected Application Settings from the SQLite Db into the Dictionary StartupConfiguration.AppSettings
                 //Must be loaded before the LoadMsGraphSettings as the MsGraph Settings are hear to start with and are just broken out for simplicity
                 StartupConfiguration.LoadProtectedSettings();
+                Log.Information($"{nameof(StartupConfiguration.LoadProtectedSettings)}");
+
+
+                //Loads the necessary values for the MS Graph API. Includes values nessary to retrieve the Bearer Access Token
+                //from the Azure Authentication Service
+                //Must be loaded before initializing the EmailManager as these settings are involved in the MSGraph authentication
+                StartupConfiguration.LoadMsGraphConfig();
+                Log.Information($"{nameof(StartupConfiguration.LoadMsGraphConfig)}");
+
+                EmailManager.Initialize(configuration, httpClientFactory);
+                Log.Information($"Email Manager {nameof(EmailManager.Initialize)}");
 
                 // Create the WebApplication builder
                 var builder = WebApplication.CreateBuilder(args);
+
+                // Explicitly configure Serilog for the WebApplication builder
+                builder.Logging.ClearProviders(); // Clear default logging providers
+                builder.Logging.AddConsole();    // Add console logging back
+                builder.Host.UseSerilog();       // Use Serilog as the primary logging provider
+
 
                 // Add the configuration to the builder
                 builder.Configuration.AddConfiguration(configuration);
@@ -46,6 +69,7 @@ namespace AutoTaskTicketManager_Base
                 ConfigureServices(builder.Services, builder.Configuration);
                 builder.Services.AddSingleton<ConfidentialClientApp>();
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
+                builder.Services.AddTransient<EmailManager>();
 
                 //Register Worker
                 builder.Services.AddSingleton<IWorkerService, Worker>();
