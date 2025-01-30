@@ -1,4 +1,5 @@
 ﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.Common.Utilities;
 using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using Azure.Identity;
@@ -8,12 +9,9 @@ using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using System.Globalization;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Web;
 
 namespace AutoTaskTicketManager_Base.MSGraphAPI
 {
@@ -21,11 +19,14 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
     {
 
         public static AuthenticationConfig config = AuthenticationConfig.ReadFromJsonFile("appsettings.json");
-
-
         private static ConfidentialClientApp _confidentialClientApp;
-
         private static readonly Serilog.ILogger _logger = Log.ForContext<EmailManager>();
+        private readonly SecureEmailApiHelper _emailApiHelper;
+
+        public EmailManager(SecureEmailApiHelper emailApiHelper)
+        {
+            _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
+        }
 
 
 
@@ -48,6 +49,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
         }
 
+
         public static async Task<string> GetAccessTokenAsync()
         {
             // Use the singleton instance to get the token
@@ -57,7 +59,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
 
 
-
+        /// <summary>
+        /// Used to verify if an e-mail address (Usually an email Distribution) is one of the emails that can trigger AT ticket creation or Update.
+        /// </summary>
+        /// <param name="Tkey"></param>
+        /// <returns></returns>
         public static Int64 GetDistros(string Tkey)
         {
             try
@@ -290,7 +296,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         //################################################################################################################
         //#                                                                                                              #
-        //#                Mail Message functions go below this demarc                                                   #
+        //#                Mail Message processing functions go below this demarc                                        #
         //#                                                                                                              #
         //################################################################################################################
 
@@ -302,7 +308,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// Sends the updated Draft Email by calling - await MSGraphSendDraftReplyAll(config, app, scopes).
         /// </summary>
         /// <returns></returns>
-        public static async Task DraftReplyAllRunAsync()
+        public static async Task DraftReplyAllRunAsync(SecureEmailApiHelper emailApiHelper)
         {
             _logger.Debug("...");
             _logger.Debug("Begin Async operations to Create MS Graph Draft Reply All Message\n");
@@ -311,7 +317,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
             //Create Draft Reply All
             _logger.Debug("await MSGraphCreateDraftReplyAll()\n");
-            await MSGraphCreateDraftReplyAll();
+            await MSGraphCreateDraftReplyAll(emailApiHelper);
 
             _logger.Debug("await EditAndSendDraftReplyAllMessage()\n");
             //Test CreateAndEditDraftReplyAllMessage
@@ -335,7 +341,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
             string subject = EmailManager.GetField("Subject");
 
-            string ticketTitle = RemoveTicketNumberFromEmailSubject(EmailManager.GetField("Subject"));
+            string ticketTitle = ContentProcessor.RemoveTicketNumberFromEmailSubject(EmailManager.GetField("Subject"));
 
             string senderName = (string)sN["emailAddress"]["name"].ToString();
 
@@ -558,7 +564,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// <param name="scopes"></param>
         /// <returns></returns>
         //private static async Task MSGraphCreateDraftReplyAll(AuthenticationConfig config, IConfidentialClientApplication app, string[] scopes)
-        private static async Task MSGraphCreateDraftReplyAll()
+        private static async Task MSGraphCreateDraftReplyAll(SecureEmailApiHelper emailApiHelper)
         {
             var accessToken = await GetAccessTokenAsync();
 
@@ -582,8 +588,9 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     var messageId = GetField("Id");
                     // create the url resource suffix to identify the message we are marking complete
                     var suffixUrlRx = emailId + "/messages/" + messageId;
-                    // Trigger the patch method to mark e-mail as read
-                    await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
+
+                    // Mark e-mail as read
+                    await emailApiHelper.MarkEmailAsReadAsync(emailId, messageId, accessToken);
 
                     _logger.Debug("...");
                     //Now go ahead and create the draft Reply All
@@ -605,7 +612,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
 
 
-        private static async Task MSGraphMarkMessageRead()
+        private static async Task MSGraphMarkMessageRead(SecureEmailApiHelper emailApiHelper)
         {
             var accessToken = await GetAccessTokenAsync();
 
@@ -625,7 +632,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 {
                     // Trigger the patch method to mark e-mail as read
                     //Get the Id of the message stored in the Email class
-                    await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
+                    //await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
+                    await emailApiHelper.MarkEmailAsReadAsync(emailId, messageId, accessToken);
 
                     _logger.Verbose("\n...");
                     _logger.Verbose($"EmailHelper.MSGraphMarkMessageRead: {config.ApiUrl}v1.0/users/" + suffixUrlRx);
@@ -756,7 +764,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
 
 
-        public static async Task CheckEmail()
+        public static async Task CheckEmail(SecureEmailApiHelper emailApiHelper)
         {
             string accessToken = Authenticate.GetAccessToken();
 
@@ -777,7 +785,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
                 await apiCaller.CallWebApiAndProcessResultASync($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken, async (result) =>
                 {
-                    await ProcessAddresses(result);
+                    await ProcessAddresses(result, emailApiHelper);
                 });
 
 
@@ -796,8 +804,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     // create the url resource suffix to identify the message we are marking complete
                     var suffixUrlRx = emailId + "/messages/" + messageId;
 
-                    // Trigger the patch method to mark e-mail as read
-                    await apiCaller.PatchWebApiAndMarkRead($"{config.ApiUrl}v1.0/users/" + suffixUrlRx, accessToken);
+                    // Mark e-mail as read
+                    await emailApiHelper.MarkEmailAsReadAsync(emailId, messageId, accessToken);
 
                 }
 
@@ -811,7 +819,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
 
 
-        public static Int64 CheckSupportEmail()
+        public static Int64 CheckSupportEmail(SecureEmailApiHelper emailApiHelper)
 
         {
             string subject = null;
@@ -839,7 +847,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
 
             //Cleanup the Subject for furthur processing.
-            subject = EmailManager.SubjectCleanup(rawSubject);
+            subject = ContentProcessor.EmailSubjectCleanup(rawSubject);
 
             //Check for Subject Exclusion Key Words and if excluded KeyWord found return -1 indicating do not process.
             var isExclusion = EmailManager.SubjectExclusionKeyWords(EmailManager.GetField("Subject"));
@@ -851,7 +859,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
 
             //Cleanup From e-mail address for futhur processing
-            var senderAddress = EmailManager.SenderCleanup(rawSender, 0);
+            var senderAddress = ContentProcessor.SenderCleanup(rawSender, 0);
 
 
 
@@ -898,7 +906,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             //Check for Ticket Number "Completed" Status in Subject
 
             //Get ticketNumber if it exists. A result of "No Match" means there was no ticket number
-            ticketNumber = EmailManager.ReturnTicketNumberFromEmailSubject(rawSubject);
+            ticketNumber = ContentProcessor.ReturnTicketNumberFromEmailSubject(rawSubject);
 
             if (ticketNumber != null && ticketNumber != "No Match")
             {
@@ -1070,7 +1078,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// </summary>
         /// <param name="result">Object with Addresses to Process</param>
 
-        async static Task ProcessAddresses(JsonNode result)
+        async static Task ProcessAddresses(JsonNode result, SecureEmailApiHelper emailApiHelper)
         {
 
             JsonArray nodes = ((result as JsonObject)!.ToArray()[1])!.Value as JsonArray;
@@ -1123,7 +1131,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     //Process the message we just loaded. An integer is returned representing the AT Customer/Company ID.
                     // A return = -1 indicates no match was found. We only create an AT ticket on a successful match of the support distro.
 
-                    Int64 coID = CheckSupportEmail();
+                    Int64 coID = CheckSupportEmail(emailApiHelper);
 
                     //Write the coID that is associated with the Support Distro to the Email class. Later we will compare it with the 
                     //companyID returned from the AT ticket we pull.
@@ -1174,7 +1182,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
                                     try
                                     {
-                                        await DraftReplyAllRunAsync();
+                                        await DraftReplyAllRunAsync(emailApiHelper);
                                     }
                                     catch (Exception ex)
                                     {
@@ -1188,7 +1196,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                                 else
                                 {
                                     _logger.Error($"Result: {resultValue} No Ticket Created");
-                                    await MSGraphMarkMessageRead();
+                                    await MSGraphMarkMessageRead(emailApiHelper);
                                     _logger.Error("Email Message Marked Read to prevent reprocessing after ticket creation failure");
                                 }
 
@@ -1232,176 +1240,6 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         }
         #endregion
-
-        public static string RemoveTicketNumberFromEmailSubject(string subject)
-        {
-            //pattern match for ticket in subject
-            string pattern = "\\bT20\\d{6}[.]{1}\\d{4}|\\bT20\\d{6}[.]{1}\\d{3}";
-
-            Match match = Regex.Match(subject, pattern);
-            if (match.Success)
-            {
-                string subjectCleaned = subject.Remove(match.Index, match.Length);
-                subjectCleaned = subjectCleaned.Replace("[]", "");
-
-                return subjectCleaned;
-            }
-            else
-            {
-                return subject;
-            }
-
-        }
-
-        public static string ReturnTicketNumberFromEmailSubject(string subject)
-        {
-            //pattern match for ticket in subject
-            string pattern = "\\bT20\\d{6}[.]{1}\\d{4}|\\bT20\\d{6}[.]{1}\\d{3}";
-
-            Match match = Regex.Match(subject, pattern);
-            if (match.Success)
-            {
-                //string ticketNumber = match.Groups[1].Value;
-                string ticketNumber = match.Value;
-
-                return ticketNumber;
-            }
-
-            return "No Match";
-
-        }
-
-        internal static string ConvertHtmlToTextAndNormalize(string htmlContent)
-        {
-            try
-            {
-                // Decode HTML entities
-                string decodedContent = DecodeHtmlContent(htmlContent);
-
-                // Load into HTML parser
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(decodedContent);
-
-                // Extract text from body or fallback to full document
-                HtmlNode bodyNode = htmlDoc.DocumentNode.SelectSingleNode("//body");
-                string rawContent = bodyNode?.InnerHtml ?? htmlDoc.DocumentNode.InnerHtml;
-
-                // Replace common line-break tags with newline characters
-                rawContent = rawContent
-                .Replace("<br>", "\n")
-                    .Replace("<br/>", "\n")
-                    .Replace("<br />", "\n")
-                    .Replace("</p>", "\n")
-                    .Replace("</div>", "\n");
-
-                // Strip remaining HTML tags but preserve newlines
-                string parsedContent = HtmlEntity.DeEntitize(Regex.Replace(rawContent, "<[^>]+>", string.Empty));
-
-                // Normalize content for better marker detection
-                parsedContent = NormalizeEmailContent(parsedContent);
-
-                // Process for common email markers (Gmail, Outlook, etc.)
-                string extractedText = ProcessEmailMarkers(parsedContent);
-
-
-
-                // Clean up remaining artifacts
-                extractedText = CleanupExtractedText(extractedText);
-
-                return extractedText;
-            }
-            catch (Exception ex)
-            {
-                string adminErrMsg = $"Error in ConvertHtmlToText: {ex.Message}";
-                _logger.Error(adminErrMsg);
-                MSGraphSendAdminErrorNotificationMail(adminErrMsg);
-
-                return "Failed to extract Email Text";
-            }
-        }
-
-        private static string NormalizeEmailContent(string content)
-        {
-            // Decode HTML entities and replace non-breaking spaces
-            content = HttpUtility.HtmlDecode(content)?.Replace("&nbsp;", " ");
-
-            // Replace HTML line breaks with actual newlines
-            content = Regex.Replace(content, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
-
-            // Remove all other HTML tags
-            content = Regex.Replace(content, @"<.*?>", string.Empty);
-
-            // Trim the content but preserve existing line breaks
-            content = Regex.Replace(content, @"(\r\n|\r|\n)+", "\n"); // Normalize line breaks
-
-            return content.Trim();
-        }
-
-
-        // Decode HTML entities and unescape
-        private static string DecodeHtmlContent(string htmlContent)
-        {
-            // Decode HTML entities and unescape special characters
-            return Regex.Unescape(HttpUtility.HtmlDecode(htmlContent));
-        }
-
-        // Process for common email markers (e.g., Gmail or Outlook headers)
-        private static string ProcessEmailMarkers(string content)
-        {
-            // Normalize the content to ensure consistent line breaks
-            content = NormalizeEmailContent(content);
-
-            // List of reply or forward markers
-            var markers = new[]
-            {
-                @"On\s.+wrote:",                     // Gmail: "On [date], [sender] wrote:"
-                @"From:\s.+",                       // Outlook: "From: [sender]"
-                @"Sent:\s.+",                       // Outlook: "Sent: [date]"
-                @"----\sOriginal\sMessage\s----",   // General: "---- Original Message ----"
-                @"Forwarded\sby\s.+",               // General: "Forwarded by [sender]"
-            };
-
-            foreach (var marker in markers)
-            {
-                // Look for the first occurrence of a marker
-                var match = Regex.Match(content, marker, RegexOptions.IgnoreCase);
-                if (match.Success)
-                {
-                    // Extract content up to the marker
-                    return content.Substring(0, match.Index).Trim();
-                }
-            }
-
-            // If no marker is found, return the full content
-            return content.Trim();
-        }
-
-
-        // Cleanup artifacts (e.g., &nbsp;, excessive whitespace)
-        private static string CleanupExtractedText(string text)
-        {
-            return text
-                .Replace("&nbsp;", " ")                       // Replace non-breaking spaces
-                .Replace("\r\n", "\n")                       // Normalize CRLF to LF
-                .Replace("\r", "\n")                         // Normalize CR to LF
-                .Replace("\n", Environment.NewLine)          // Ensure cross-platform compatibility
-                .Replace("\"", "\\\"")                       // Escape double quotes for JSON
-                .Replace(" \\ ", "\\\\")                      // Escape single backslash
-                .Trim();
-        }
-
-        internal static async Task<string> RegexRemovePatterns(string dirtyString)
-        {
-            string input = "This is a test string with some patterns to remove.";
-            string[] patterns = { "test", "patterns", "remove" };
-
-            Regex regex = new Regex(string.Join("|", patterns), RegexOptions.IgnoreCase);
-
-            string cleanString = regex.Replace(input, "");
-
-            return cleanString;
-
-        }
 
         public static async Task<bool> SubjectExclusionKeyWords(string subject)
         {
@@ -1489,58 +1327,6 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             return messageOriginal;
         }
 
-        public static string SenderCleanup(string sender, int name = 1)
-        {
-            try
-            {
-                var jsonData = JsonDocument.Parse(sender);
-                var emailAddress = jsonData.RootElement.GetProperty("emailAddress");
-                var nameValue = emailAddress.GetProperty("name").GetString();
-                var addressValue = emailAddress.GetProperty("address").GetString();
-
-                if (name == 1)
-                {
-                    return nameValue;
-                }
-
-                else
-                {
-                    return addressValue;
-                }
-
-            }
-            catch (Newtonsoft.Json.JsonException)
-            {
-                _logger.Debug("Invalid JSON format sent to EmailHelper.SenderCleanup(sender)");
-                return "Unknown Sender";
-            }
-            catch (KeyNotFoundException)
-            {
-                _logger.Debug("The 'name' key is not present in the JSON data sent to EmailHelper.SenderCleanup(sender)");
-                return "Unknown Sender";
-            }
-        }
-
-
-        public static string SubjectCleanup(string rawSubject)
-        {
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-
-            string cleanSubject = rawSubject
-
-                //convert to all lower
-                //.ToLower() // Removing becausing it is changing the Case of Acronyms that should remain all caps
-                //clean any 're:' or 'fwd'
-                .Replace("re:", "", StringComparison.OrdinalIgnoreCase)
-                .Replace("fw:", "", StringComparison.OrdinalIgnoreCase)
-                .Trim();
-
-            //convert to title case
-            // string titleCaseString = textInfo.ToTitleCase(cleanSubject.ToLower()); // Removing the 'ToLower()' becausing it is changing the Case of Acronyms that should remain all caps
-            string titleCaseString = textInfo.ToTitleCase(cleanSubject);
-
-            return titleCaseString;
-        }
 
     }
 }

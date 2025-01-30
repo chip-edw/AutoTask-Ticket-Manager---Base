@@ -67,11 +67,15 @@ namespace AutoTaskTicketManager_Base
 
                 // Register Services
                 ConfigureServices(builder.Services, builder.Configuration);
+
+                //Register Singletons
+                builder.Services.AddSingleton<SecureEmailApiHelper>();
                 builder.Services.AddSingleton<ConfidentialClientApp>();
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
                 builder.Services.AddTransient<EmailManager>();
 
                 //Register Worker
+                builder.Services.AddHttpClient<SecureEmailApiHelper>();
                 builder.Services.AddSingleton<IWorkerService, Worker>();
                 builder.Services.AddHostedService<Worker>();
 

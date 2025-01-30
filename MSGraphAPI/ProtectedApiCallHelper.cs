@@ -83,62 +83,6 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
         #endregion
 
-        #region "PatchWebApiAndMarkRead"
-
-        /// <summary>
-        /// Makes PATCH Calls to the protected web API and processes the result
-        /// </summary>
-        /// <param name="webApiUrl">URL of the web API to call (supposed to return Json)</param>
-        /// <param name="accessToken">Access token used as a bearer security token to call the web API</param>Y
-        public async Task PatchWebApiAndMarkRead(string webApiUrl, string accessToken)
-        {
-            if (!string.IsNullOrEmpty(accessToken))
-            {
-                var defaultRequestHeaders = HttpClient.DefaultRequestHeaders;
-                if (defaultRequestHeaders.Accept == null || !defaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
-                {
-                    HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                }
-                defaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-
-                // body ###########################################
-
-                HttpContent httpContent = new StringContent("{ " + "'isRead'" + ":" + "'true'" + " }", encoding: System.Text.Encoding.UTF8, "application/json");
-
-                //#################################################
-
-                HttpResponseMessage response = await HttpClient.PatchAsync(webApiUrl, httpContent);
-                if (response.IsSuccessStatusCode)
-                {
-                    Log.Debug("E-mail message marked Read");
-
-                    string json = await response.Content.ReadAsStringAsync();
-                    JsonNode result = JsonNode.Parse(json);
-
-                    //Decrement the unread e-mail counter
-                    int cnt = EmailManager.GetUnreadCount() - 1;
-
-
-                    EmailManager.SetUnreadCount(cnt);
-
-                    return;
-                }
-                else
-                {
-                    Log.Error($"ProtectedApiCallHelper.PatchWebAndMarkRead - Failed to call the web API: {response.StatusCode}");
-                    string content = await response.Content.ReadAsStringAsync();
-
-                    // Note that if you got reponse.Code == 403 and reponse.content.code == "Authorization_RequestDenied"
-                    // this is because the tenant admin as not granted consent for the application to call the Web API
-                    return;
-                }
-
-            }
-
-        }
-
-        #endregion
 
         #region "PostDraftReplyToAllMessage"
         /// <summary>
@@ -195,133 +139,6 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
         #endregion
 
-        #region "PostSendDraftReplyToAllMessage"
-        public async Task PostSendDraftReplyToAllMessage(string webApiUrl, string accessToken)
-        {
-            if (!string.IsNullOrEmpty(accessToken))
-            {
-                var defaultRequestHeaders = HttpClient.DefaultRequestHeaders;
-                if (defaultRequestHeaders.Accept == null || !defaultRequestHeaders.Accept.Any(m => m.MediaType == "application/json"))
-                {
-                    HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                }
-                defaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-                // body ###########################################
-
-                HttpContent httpContent = new StringContent("{ " + "" + " }", encoding: System.Text.Encoding.UTF8, "application/json");
-
-                //#################################################
-
-
-                HttpResponseMessage response = await HttpClient.PostAsync(webApiUrl, httpContent);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string data = await response.Content.ReadAsStringAsync();
-
-                    try
-                    {
-                        if (data != null)
-                        {
-                            Log.Information("Draft Reply All Message Sent");
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"ProtectedApiCallHelper.PostSendDraftReplyToAllMessage - {ex}");
-
-                    }
-
-
-                }
-                else
-                {
-                    Log.Error($"ProtectedAPICallHelper.PostDraftReplyToAllMessage - Failed to call the web API: {response.StatusCode}");
-                    string content = await response.Content.ReadAsStringAsync();
-
-                    // Note that if you got reponse.Code == 403 and reponse.content.code == "Authorization_RequestDenied"
-                    // this is because the tenant admin as not granted consent for the application to call the Web API
-                }
-
-            }
-
-        }
-        #endregion
-
-        #region "PatchUpdateDraftReplyToAllMessage"
-        public async Task PatchUpdateDraftReplyToAllMessage(string webApiUrl, string accessToken)
-        {
-            if (!string.IsNullOrEmpty(accessToken))
-            {
-                var origMessageContent = EmailManager.GetField("DraftMsgContent");
-
-
-                // Always use a content type of Html
-                var contentType = "html";
-
-                //Get content for reply
-                var newContent = EmailService.Default.HtmlMessageText;
-
-
-                //Create Updated Reply all Message Content
-                string content = newContent + "\\r\\n" + origMessageContent;
-
-                //Get the updated Subject that has the AT ticket number.
-                var subject = EmailManager.GetField("Subject");
-
-
-                //Get the Support email for updating the From: address
-                //(this is required as this email is the one that is authorized to send from MS Graph
-
-                var fromEmail = StartupConfiguration.GetConfig("SupportMailBox");
-
-                var body = @"{
-                    " + "\n" +
-                    @" ""subject"":" + '"' + subject + '"' + "," + "\n" +
-                    @"       ""body"": {" +
-                    @"       ""contentType"":" + '"' + contentType + '"' + "," + "\n" +
-                    @"        ""content"":" + '"' + content + '"' + "\n" +
-                    @" }," +
-                    @"      ""from"": {
-                    " + "\n" +
-                    @"        ""emailAddress"": {
-                    " + "\n" +
-                    @"            ""name"": ""FlintFox Ticket System"",
-                    " + "\n" +
-                    @"            ""address"":" + '"' + fromEmail + '"' + "\n" +
-                    @"        } " + "\n" +
-                    @"    },
-                    " + "\n" +
-                    @"  ""inferenceClassification"": ""other""
-                    " + "\n" +
-                    @"  
-                    " + "\n" +
-                    @"}
-                    " + "\n" +
-                    @"";
-
-
-
-                var client = new RestClient();
-                var request = new RestRequest(webApiUrl, Method.Patch);
-
-                request.AddHeader("Content-Type", "application/json");
-                request.AddHeader("Authorization", accessToken);
-
-                request.RequestFormat = DataFormat.Json;
-
-                request.AddParameter("application/json-patch+json", body, ParameterType.RequestBody);
-
-                RestResponse response = client.Execute(request);
-
-                Log.Verbose($" The response returned from the Patch Update of the ReplyAll Draft message is:   {response.Content}");
-
-            }
-
-        }
-        #endregion
 
         #region "PostSendAdminErrorNotificationMessage"
         //PostSendAdminErrorNotificationMessage
@@ -466,6 +283,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         }
         #endregion
+
 
     }
 }

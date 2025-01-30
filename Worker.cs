@@ -21,17 +21,15 @@ namespace AutoTaskTicketManager_Base
 
         private readonly ConfidentialClientApp _confidentialClientApp;
         private readonly EmailManager _emailManager;
+        private readonly SecureEmailApiHelper _emailApiHelper;
 
-        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager, ILogger<Worker> logger)
+        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager, SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
-            //_logger = logger;
             _logger = Log.ForContext<Worker>();
+            _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
         }
-
-
-
 
 
         public async void StopService()
@@ -138,10 +136,25 @@ namespace AutoTaskTicketManager_Base
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
             int timeDelay = Int32.Parse(tD) * 1000;
 
+
+
             try
             {
-                await _confidentialClientApp.GetAccessToken();
+                string accessToken = await _confidentialClientApp.GetAccessToken();
                 _logger.Debug("Acquired Access Token for Startup");
+
+                //Send a test e-mail message using the refactored ProtectedApiCallHelper Class
+
+                string subject = "ATTMS Worker Started Successfully";
+                string body = $"The ATTMS Worker has started. at {System.DateTime.Now}";
+                string adminEmail = "chip.edw@gmail.com";
+                string url = "https://graph.microsoft.com/v1.0/users/attms@v7n2m.onmicrosoft.com/sendMail";
+
+                //Comment or uncomment following line based on if you want an e-mail sent in startup
+                //Later put config in Appsettings.json to control this
+
+                //await _emailApiHelper.SendEmailAsync(url, accessToken, subject, body, adminEmail);
+
             }
             catch (Exception ex)
             {
@@ -163,7 +176,8 @@ namespace AutoTaskTicketManager_Base
 
                         //#####################################################
                         //Check if any new e-mail has arrived in Inbox.
-                        await Task.Run(EmailManager.CheckEmail, stoppingToken);
+                        //await Task.Run(() => EmailManager.CheckEmail(_emailApiHelper), stoppingToken);
+                        await EmailManager.CheckEmail(_emailApiHelper);
                         //#####################################################
 
 

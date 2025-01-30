@@ -1,4 +1,5 @@
-﻿using AutoTaskTicketManager_Base.MSGraphAPI;
+﻿using AutoTaskTicketManager_Base.Common.Utilities;
+using AutoTaskTicketManager_Base.MSGraphAPI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -19,7 +20,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         {
             // Do some cleanup of the e-mail subject before creating the ticket title
             string rawSubject = EmailManager.GetField("Subject");
-            string title = EmailManager.SubjectCleanup(rawSubject);
+            string title = ContentProcessor.EmailSubjectCleanup(rawSubject);
 
             //check if Auto-Assign Flag set for AT Company
             bool autoAssign = StartupConfiguration.autoAssignCompanies.TryGetValue(companyId, out bool value);
@@ -61,13 +62,14 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             string descriptionRaw = EmailManager.GetField("Body");
 
 
-            #region "Formats and cleanup
+            #region Formats and cleanup
+
 
             try
             {
 
                 //Convert Escaped HTML to Text and Normalize - New
-                descriptionText = EmailManager.ConvertHtmlToTextAndNormalize(descriptionRaw);
+                descriptionText = await ContentProcessor.ConvertHtmlToTextAndNormalize(descriptionRaw);
 
             }
             catch (Exception ex)
@@ -111,6 +113,46 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             if (description.Length > 1500)
             {
                 description = description.Substring(0, 1500);
+            }
+
+            #endregion
+
+
+            #region Example Use of the SecureEmailApiHelper Singleton
+            static async Task HandleTicketAsync(string ticketId, SecureEmailApiHelper emailApiHelper)
+            {
+                try
+                {
+                    // Your ticket handling logic
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception
+                    Log.Error($"An error occurred while handling ticket {ticketId}: {ex}");
+
+                    // Send an administrative email
+                    await SendAdministrativeEmailAsync(ex, ticketId, emailApiHelper);
+                }
+            }
+
+            static async Task SendAdministrativeEmailAsync(Exception exception, string ticketId, SecureEmailApiHelper emailApiHelper)
+            {
+                try
+                {
+                    string subject = $"Error in Ticket Handler - Ticket ID: {ticketId}";
+                    string body = $"An error occurred while processing ticket {ticketId}.\n\n" +
+                                  $"Exception Details:\n{exception}";
+
+                    string adminEmail = "admin@example.com"; // Replace with actual admin email
+                    string url = "https://graph.microsoft.com/v1.0/me/sendMail"; // MS Graph endpoint
+                    string accessToken = "ACCESS_TOKEN"; // Replace with actual token retrieval logic
+
+                    await emailApiHelper.SendEmailAsync(url, accessToken, subject, body, adminEmail);
+                }
+                catch (Exception emailException)
+                {
+                    Log.Error($"Failed to send administrative email: {emailException}");
+                }
             }
 
             #endregion
@@ -296,7 +338,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                 bool resourceActive = false;
 
                 //Cleanup From (Sender) e-mail address for futhur processing
-                var senderAddress = EmailManager.SenderCleanup(EmailManager.GetField("From"), 0);
+                var senderAddress = ContentProcessor.SenderCleanup(EmailManager.GetField("From"), 0);
 
                 var assignments = StartupConfiguration.autoAssignSenders;
 
@@ -835,14 +877,14 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             // How many rows do we want from the body of the e-mail? Will need to decide. For now will pick 1500 characters
 
             string messageBody = EmailManager.GetField("Body");
-            string description = EmailManager.ConvertHtmlToTextAndNormalize(messageBody);
+            string description = await ContentProcessor.ConvertHtmlToTextAndNormalize(messageBody);
 
             string sender = EmailManager.GetField("Sender");
 
             Thread.Sleep(500); //sleep 500 ms because I was to lazy to go back and  change the EmailManager.GetField() method
             //to awaitable because there were 27 references I would have had to update. Will do later
 
-            var title = EmailManager.SenderCleanup(sender);
+            var title = ContentProcessor.SenderCleanup(sender);
 
             Console.WriteLine(title);
 
