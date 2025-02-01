@@ -9,33 +9,58 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         private readonly string _userName;
         private readonly string _secret;
 
-        public ApiClient(string baseUrl, string apiIntegrationCode, string userName, string secret)
+        public ApiClient(IConfiguration configuration)
         {
-            var options = new RestClientOptions
+            _apiIntegrationCode = configuration["APITrackingID"];
+            _userName = configuration["APIUsername"];
+            _secret = configuration["APIPassword"];
+
+            var baseUrl = configuration["RestfulBaseURL"];
+            _client = new RestClient(new RestClientOptions
             {
                 BaseUrl = new Uri(baseUrl),
-                MaxTimeout = 60000 // Timeout in milliseconds (e.g., 60000 ms = 1 minute)
-            };
-
-            _client = new RestClient(options);
-
-            _apiIntegrationCode = apiIntegrationCode;
-            _userName = userName;
-            _secret = secret;
+                MaxTimeout = 240000 // 4 minutes timeout
+            });
         }
 
-        public RestResponse Get(string resource)
+        private void AddHeaders(RestRequest request)
         {
-            var request = new RestRequest(resource, Method.Get);
             request.AddHeader("ApiIntegrationCode", _apiIntegrationCode);
             request.AddHeader("UserName", _userName);
             request.AddHeader("Secret", _secret);
             request.AddHeader("Content-Type", "application/json");
-
-            var body = @"";
-            request.AddParameter("application/json", body, ParameterType.RequestBody);
-
-            return _client.Execute(request);
         }
+
+
+        public async Task<RestResponse> GetAsync(string resource)
+        {
+            var request = new RestRequest(resource, Method.Get);
+            AddHeaders(request);
+            return await _client.ExecuteAsync(request);
+        }
+
+        public async Task<RestResponse> PostAsync(string resource, object body)
+        {
+            var request = new RestRequest(resource, Method.Post);
+            AddHeaders(request);
+            request.AddJsonBody(body);
+            return await _client.ExecuteAsync(request);
+        }
+
+        public async Task<RestResponse> PatchAsync(string resource, object body)
+        {
+            var request = new RestRequest(resource, Method.Patch);
+            AddHeaders(request);
+            request.AddJsonBody(body);
+            return await _client.ExecuteAsync(request);
+        }
+
+        public async Task<RestResponse> DeleteAsync(string resource)
+        {
+            var request = new RestRequest(resource, Method.Delete);
+            AddHeaders(request);
+            return await _client.ExecuteAsync(request);
+        }
+
     }
 }

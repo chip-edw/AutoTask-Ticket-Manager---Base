@@ -574,7 +574,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 var emailId = StartupConfiguration.GetConfig("SupportMailBox");
                 var supportMessageId = GetField("Id");
                 var httpClient = new HttpClient();
-                var apiCaller = new ProtectedApiCallHelper(httpClient);
+                var apiCaller = new SecureEmailApiHelper(httpClient);
                 var suffixUrl = emailId + "/messages/" + supportMessageId + "/createReplyAll";
 
                 _logger.Verbose("...");
@@ -595,7 +595,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     _logger.Debug("...");
                     //Now go ahead and create the draft Reply All
                     _logger.Debug("Create Draft Reply All");
-                    await apiCaller.PostDraftReplyToAllMessage($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken);
+                    await emailApiHelper.PostDraftReplyToAllMessage($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken);
 
                     _logger.Debug("EmailHelper.MSGraphCreateDraftReplyAll -  Draft ReplyAll Created");
 
@@ -622,7 +622,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 var emailId = StartupConfiguration.GetConfig("SupportMailBox");
                 var supportMessageId = GetField("Id");
                 var httpClient = new HttpClient();
-                var apiCaller = new ProtectedApiCallHelper(httpClient);
+                var apiCaller = new SecureEmailApiHelper(httpClient);
                 var messageId = GetField("Id");
 
                 // create the url resource suffix to identify the message we are marking complete
@@ -699,7 +699,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
 
 
-        public static async Task MSGraphSendAdminErrorNotificationMail(string adminErrMsg)
+        public static async Task MSGraphSendAdminErrorNotificationMail(string adminErrMsg, SecureEmailApiHelper emailApiHelper)
         {
             var accessToken = await GetAccessTokenAsync();
 
@@ -710,14 +710,14 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 //filter operators are =:eq !=:ne
                 var emailId = StartupConfiguration.GetConfig("SupportMailBox");
                 var httpClient = new HttpClient();
-                var apiCaller = new ProtectedApiCallHelper(httpClient);
+                var apiCaller = new SecureEmailApiHelper(httpClient);
                 var suffixUrl = emailId + "/sendmail";
                 string errorMsg = adminErrMsg;
                 string apiUrl = $"{config.ApiUrl}v1.0/users/";
 
                 try
                 {
-                    await apiCaller.PostSendAdminErrorNotificationMessage(apiUrl + suffixUrl, errorMsg, accessToken);
+                    await emailApiHelper.PostSendAdminErrorNotificationMessage(apiUrl + suffixUrl, errorMsg, accessToken);
                 }
                 catch (Exception ex)
                 {
@@ -732,7 +732,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
 
         public async Task SendEmailToResource(string email, string firstName, string ticketNumber,
-            string emailSubject, string emailDescription)
+            string emailSubject, string emailDescription, SecureEmailApiHelper emailApiHelper)
         {
             var accessToken = await GetAccessTokenAsync();
 
@@ -743,14 +743,14 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 //filter operators are =:eq !=:ne
                 var emailId = StartupConfiguration.GetConfig("SupportMailBox");
                 var httpClient = new HttpClient();
-                var apiCaller = new ProtectedApiCallHelper(httpClient);
+                var apiCaller = new SecureEmailApiHelper(httpClient);
                 var suffixUrl = emailId + "/sendmail";
                 string errorMsg = "Delete this later";
                 string apiUrl = $"{config.ApiUrl}v1.0/users/";
 
                 try
                 {
-                    await apiCaller.PostSendResourceNotificationMessage(apiUrl + suffixUrl, accessToken, email,
+                    await emailApiHelper.PostSendResourceNotificationMessage(apiUrl + suffixUrl, accessToken, email,
                         firstName, ticketNumber, emailSubject, emailDescription);
                 }
                 catch (Exception ex)
@@ -775,7 +775,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 var filter = "?$filter=isRead ne true";
 
                 var httpClient = new HttpClient();
-                var apiCaller = new ProtectedApiCallHelper(httpClient);
+                //var apiCaller = new ProtectedApiCallHelper(httpClient);
                 var suffixUrl = emailId + "/mailfolders/" + "inbox/messages" + filter;
 
 
@@ -783,7 +783,9 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 _logger.Verbose("...");
 
 
-                await apiCaller.CallWebApiAndProcessResultASync($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken, async (result) =>
+                //Key call that returns the result from the SecureEmailApiHelper.cs
+                //The result is returned and processed by the EmailManager.ProcessAddresses() method.
+                await emailApiHelper.FetchAndProcessUnreadEmailsAsync($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken, async (result) =>
                 {
                     await ProcessAddresses(result, emailApiHelper);
                 });
@@ -1171,7 +1173,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                                 //Create an Autotask Ticket
                                 // The ticket id and the ticket number are saved in the Email class as AtTicketId and AtTicketNo
 
-                                string resultValue = await TicketHandler.CreateTicket(coID);
+                                string resultValue = await TicketHandler.CreateTicket(coID, emailApiHelper);
 
                                 if (resultValue != "exception" && resultValue != null)
                                 {
@@ -1189,7 +1191,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                                         _logger.Warning($"\n Failed in MSGraph.EmailHelper.DraftReplyAllRunAsync() \n {ex}");
                                         _logger.Warning($"Ticket {ticketNumber} created but Draft Reply not sent\n");
 
-                                        await MSGraphSendAdminErrorNotificationMail(ex.ToString());
+                                        await MSGraphSendAdminErrorNotificationMail(ex.ToString(), emailApiHelper);
                                     }
 
                                 }
@@ -1223,7 +1225,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                             {
                                 //Ticket Ref , Ticket number status already written to Email class object
 
-                                TicketHandler.CreateTicketNote();
+                                TicketHandler.CreateTicketNote(emailApiHelper);
                                 return;
 
                             }

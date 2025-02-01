@@ -22,6 +22,13 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             MaxTimeout = 240000 // Set timeout to 4 minutes (240000 ms)
         });
 
+        private static IApiClient _apiClient;
+
+        public static void Initialize(IApiClient apiClient)
+        {
+            _apiClient = apiClient;
+        }
+
 
         // Retrieves the AutoTask Zone Information for the API user that is using this service
         // This method does not require authentication
@@ -72,11 +79,12 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// <returns></returns>
         public static void PicklistInformation()
         {
-            var apiClient = new ApiClient(baseUrl, apiIntegrationCode, userName, secret);
-            var picklistService = new PicklistService(apiClient);
+            var picklistService = new PicklistService(_apiClient);
+            picklistService.GetPicklistInformationAsync().Wait(); // Call async method synchronously if needed
+
 
             // Call the API and process the response
-            picklistService.GetPicklistInformation();
+            picklistService.GetPicklistInformationAsync().Wait();
         }
 
         /// <summary>

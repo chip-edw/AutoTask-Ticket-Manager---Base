@@ -12,12 +12,12 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             _apiClient = apiClient;
         }
 
-        public void GetPicklistInformation()
+        public async Task GetPicklistInformationAsync()
         {
             string resource = "Tickets/entityinformation/fields";
             try
             {
-                var response = _apiClient.Get(resource);
+                var response = await _apiClient.GetAsync(resource);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -26,16 +26,15 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
 
                     var unescapedResponse = JObject.Parse(rawResponse);
 
-                    JArray a = (JArray)unescapedResponse["fields"];
+                    JArray fields = (JArray)unescapedResponse["fields"];
 
                     //Get each picklist out of the entity field information returned from API
-                    foreach (JObject item in a)
+                    foreach (JObject field in fields)
                     {
-                        if (item.GetValue("isPickList").ToString().ToLower() == "true")
+                        if (field.GetValue("isPickList").ToString().ToLower() == "true")
                         {
-                            string isPickList = item.GetValue("isPickList").ToString().ToLower();
-                            string name = item.GetValue("name").ToString();
-                            string picklistValues = item.GetValue("picklistValues").ToString();
+                            string name = field.GetValue("name").ToString();
+                            string picklistValues = field.GetValue("picklistValues").ToString();
                             Array plv = JArray.Parse(picklistValues).ToArray();
 
                             Ticket.SetPickLists(name, plv);

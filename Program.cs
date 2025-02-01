@@ -1,3 +1,4 @@
+using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -73,6 +74,9 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<ConfidentialClientApp>();
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
                 builder.Services.AddTransient<EmailManager>();
+                builder.Services.AddSingleton<IApiClient, ApiClient>();
+                builder.Services.AddTransient<IPicklistService, PicklistService>();
+
 
                 //Register Worker
                 builder.Services.AddHttpClient<SecureEmailApiHelper>();

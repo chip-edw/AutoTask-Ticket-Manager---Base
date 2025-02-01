@@ -14,7 +14,7 @@ namespace AutoTaskTicketManager_Base.Common.Utilities
         private static readonly Serilog.ILogger _logger = Log.ForContext<ContentProcessor>();
 
         #region HTML Related Methods
-        internal static async Task<string> ConvertHtmlToTextAndNormalize(string htmlContent)
+        internal static async Task<string> ConvertHtmlToTextAndNormalize(string htmlContent, SecureEmailApiHelper emailApiHelper)
         {
             try
             {
@@ -58,7 +58,7 @@ namespace AutoTaskTicketManager_Base.Common.Utilities
                 string adminErrMsg = $"Error in ConvertHtmlToText: {ex.Message}";
                 _logger.Error(adminErrMsg);
 
-                await EmailManager.MSGraphSendAdminErrorNotificationMail(adminErrMsg);
+                await EmailManager.MSGraphSendAdminErrorNotificationMail(adminErrMsg, emailApiHelper);
 
                 return "Failed to extract Email Text";
             }

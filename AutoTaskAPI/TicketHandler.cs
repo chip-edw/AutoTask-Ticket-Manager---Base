@@ -16,7 +16,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// </summary>
         /// <param name="companyId"></param>
         /// <returns></returns>
-        public static async Task<string> CreateTicket(Int64 companyId)
+        public static async Task<string> CreateTicket(Int64 companyId, SecureEmailApiHelper emailApiHelper)
         {
             // Do some cleanup of the e-mail subject before creating the ticket title
             string rawSubject = EmailManager.GetField("Subject");
@@ -69,7 +69,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             {
 
                 //Convert Escaped HTML to Text and Normalize - New
-                descriptionText = await ContentProcessor.ConvertHtmlToTextAndNormalize(descriptionRaw);
+                descriptionText = await ContentProcessor.ConvertHtmlToTextAndNormalize(descriptionRaw, emailApiHelper);
 
             }
             catch (Exception ex)
@@ -871,13 +871,13 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// </summary>
         /// <param name="ticketRef"></param>
         /// <returns></returns>
-        public static async Task CreateTicketNote()
+        public static async Task CreateTicketNote(SecureEmailApiHelper emailApiHelper)
         {
             //Get Body of Email Message
             // How many rows do we want from the body of the e-mail? Will need to decide. For now will pick 1500 characters
 
             string messageBody = EmailManager.GetField("Body");
-            string description = await ContentProcessor.ConvertHtmlToTextAndNormalize(messageBody);
+            string description = await ContentProcessor.ConvertHtmlToTextAndNormalize(messageBody, emailApiHelper);
 
             string sender = EmailManager.GetField("Sender");
 

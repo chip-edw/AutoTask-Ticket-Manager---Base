@@ -1,3 +1,4 @@
+using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using Serilog;
 
@@ -70,8 +71,8 @@ namespace AutoTaskTicketManager_Base
             //Loads the supportDistros Dictionary       
             StartupConfiguration.LoadSupportDistros();
 
-            ////Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
-            //AutotaskAPIGet.PicklistInformation();
+            //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
+            AutotaskAPIGet.PicklistInformation();
 
             ////Loads all active Autotask Companies from the AutoTask API into Companies.companies Dictionary
             //AutotaskAPIGet.GetAutoTaskCompanies();

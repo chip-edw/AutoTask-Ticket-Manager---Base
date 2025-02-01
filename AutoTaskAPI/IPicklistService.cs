@@ -2,6 +2,6 @@
 {
     public interface IPicklistService
     {
-        void GetPicklistInformation();
+        Task GetPicklistInformationAsync();
     }
 }
