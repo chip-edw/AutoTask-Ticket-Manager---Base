@@ -11,11 +11,11 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
 
         public ApiClient(IConfiguration configuration)
         {
-            _apiIntegrationCode = configuration["APITrackingID"];
-            _userName = configuration["APIUsername"];
-            _secret = configuration["APIPassword"];
+            _apiIntegrationCode = StartupConfiguration.GetProtectedSetting("APITrackingID");
+            _userName = StartupConfiguration.GetProtectedSetting("APIUsername");
+            _secret = StartupConfiguration.GetProtectedSetting("APIPassword");
 
-            var baseUrl = configuration["RestfulBaseURL"];
+            var baseUrl = StartupConfiguration.GetProtectedSetting("RestfulBaseURL");
             _client = new RestClient(new RestClientOptions
             {
                 BaseUrl = new Uri(baseUrl),

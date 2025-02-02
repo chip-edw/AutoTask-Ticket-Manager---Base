@@ -9,7 +9,8 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
 
         public PicklistService(IApiClient apiClient)
         {
-            _apiClient = apiClient;
+            _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+            Log.Debug($"PicklistService initialized with IApiClient: {_apiClient != null}");
         }
 
         public async Task GetPicklistInformationAsync()
@@ -18,6 +19,17 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             try
             {
                 var response = await _apiClient.GetAsync(resource);
+
+                if (response == null)
+                {
+                    Log.Error("API response is null.");
+                    return;
+                }
+                if (!response.IsSuccessStatusCode)
+                {
+                    Log.Error($"API call failed with status code: {response.StatusCode}");
+                    return;
+                }
 
                 if (response.IsSuccessStatusCode)
                 {

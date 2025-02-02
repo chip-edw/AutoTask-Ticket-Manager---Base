@@ -77,15 +77,11 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// Allows us to get all the current information for menu dropdowns like status into a dictionary at load since they can change as items are deleted or added.
         /// </summary>
         /// <returns></returns>
-        public static void PicklistInformation()
+        public static void PicklistInformation(IPicklistService picklistService)
         {
-            var picklistService = new PicklistService(_apiClient);
-            picklistService.GetPicklistInformationAsync().Wait(); // Call async method synchronously if needed
-
-
-            // Call the API and process the response
             picklistService.GetPicklistInformationAsync().Wait();
         }
+
 
         /// <summary>
         /// Loads the information for AT companies of Type 'Customer' and updates the SQL DB with any newly added companies

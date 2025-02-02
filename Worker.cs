@@ -23,13 +23,16 @@ namespace AutoTaskTicketManager_Base
         private readonly ConfidentialClientApp _confidentialClientApp;
         private readonly EmailManager _emailManager;
         private readonly SecureEmailApiHelper _emailApiHelper;
+        private readonly IPicklistService _picklistService;
 
-        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager, SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger)
+        public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
+            SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
             _logger = Log.ForContext<Worker>();
             _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
+            _picklistService = picklistService ?? throw new ArgumentNullException(nameof(picklistService));
         }
 
 
@@ -72,7 +75,8 @@ namespace AutoTaskTicketManager_Base
             StartupConfiguration.LoadSupportDistros();
 
             //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
-            AutotaskAPIGet.PicklistInformation();
+            AutotaskAPIGet.PicklistInformation(_picklistService);
+
 
             ////Loads all active Autotask Companies from the AutoTask API into Companies.companies Dictionary
             //AutotaskAPIGet.GetAutoTaskCompanies();

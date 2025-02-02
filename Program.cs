@@ -75,7 +75,7 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
                 builder.Services.AddTransient<EmailManager>();
                 builder.Services.AddSingleton<IApiClient, ApiClient>();
-                builder.Services.AddTransient<IPicklistService, PicklistService>();
+                builder.Services.AddSingleton<IPicklistService, PicklistService>();
 
 
                 //Register Worker
