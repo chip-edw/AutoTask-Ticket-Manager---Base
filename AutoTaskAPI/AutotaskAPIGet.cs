@@ -5,7 +5,7 @@ using Serilog;
 
 namespace AutoTaskTicketManager_Base.AutoTaskAPI
 {
-    public static class AutotaskAPIGet
+    public class AutotaskAPIGet
     {
 
         // Centralized API credentials, misc settings, and options
@@ -27,6 +27,13 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         public static void Initialize(IApiClient apiClient)
         {
             _apiClient = apiClient;
+        }
+
+        private readonly IPicklistService _picklistService;
+
+        public AutotaskAPIGet(IPicklistService picklistService)
+        {
+            _picklistService = picklistService ?? throw new ArgumentNullException(nameof(picklistService));
         }
 
 
@@ -77,10 +84,18 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// Allows us to get all the current information for menu dropdowns like status into a dictionary at load since they can change as items are deleted or added.
         /// </summary>
         /// <returns></returns>
-        public static void PicklistInformation(IPicklistService picklistService)
+        public Task PicklistInformation(IPicklistService picklistService)
         {
+            if (picklistService == null)
+            {
+                throw new ArgumentNullException(nameof(picklistService), "picklistService is null in PicklistInformation.");
+            }
+
             picklistService.GetPicklistInformationAsync().Wait();
+
+            return Task.CompletedTask;
         }
+
 
 
         /// <summary>
@@ -334,72 +349,6 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             }
 
         }
-
-
-        /// <summary>
-        /// Loads the StartupConfiguration.cs autoTaskResources dictionary with the active resources
-        /// </summary>
-        public static string GetAutoTaskActiveResources()
-        {
-            // Filter for returning all the Active AutoTask Resources
-            string resource = "/Resources/query?search=" +
-                "{ \"filter\":[{ \"op\" : \"exist\", \"field\" : \"id\" }, { \"op\" : \"eq\", \"field\" :  \"isActive\", \"value\" : true}]}";
-
-
-            var client = new RestClient(baseUrl);
-
-            var request = new RestRequest(resource, Method.Get);
-            request.AddHeader("ApiIntegrationCode", apiIntegrationCode);
-            request.AddHeader("UserName", userName);
-            request.AddHeader("Secret", secret);
-            request.AddHeader("Content-Type", "application/json");
-
-
-            var body = @"";
-            request.AddParameter("application/json", body, ParameterType.RequestBody);
-            RestResponse response = client.Execute(request);
-
-            if (response.IsSuccessStatusCode == true)
-
-            {
-                string rawResponse = response.Content!;
-                Log.Verbose("The web response is:  " + rawResponse);
-
-                var unescapedResponse = JObject.Parse(rawResponse);
-
-                JArray a = (JArray)unescapedResponse["items"];
-
-                //Drop all Entries from autoTaskresources dictionary for a fresh fill.
-                StartupConfiguration.autoTaskResources.Clear();
-
-                //Get each active Resource out of the entity field information returned from API
-                foreach (JObject item in a)
-                {
-                    if (item.GetValue("id") != null)
-                    {
-                        Int64 id = (Int64)item.GetValue("id");
-                        string firstName = item.GetValue("firstName").ToString();
-                        string lastName = item.GetValue("lastName").ToString();
-                        string email = item.GetValue("email").ToString();
-                        string[] plv = { firstName, lastName, email };
-
-                        StartupConfiguration.autoTaskResources.Add(id, plv);
-                    }
-                }
-
-                Log.Debug($"Active Autotask Resources loaded. Count: {StartupConfiguration.autoTaskResources.Count}\n");
-                return "Success - GetAutoTaskResources";
-            }
-
-            else
-            {
-                Log.Warning("Issue retrieving web response. Success Status Code was not 'OK' for for GET Method GetAutoTaskActiveResources()");
-
-                return "Failed - Get Autotask Resources";
-            }
-
-        }
-
 
     }
 }

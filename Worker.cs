@@ -24,15 +24,22 @@ namespace AutoTaskTicketManager_Base
         private readonly EmailManager _emailManager;
         private readonly SecureEmailApiHelper _emailApiHelper;
         private readonly IPicklistService _picklistService;
+        private readonly IConfiguration _configuration;
+        private readonly AutotaskAPIGet _autotaskAPIGet;
+        private readonly TicketHandler _ticketHandler;
 
         public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
-            SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService)
+            SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
+            IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
             _logger = Log.ForContext<Worker>();
             _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _picklistService = picklistService ?? throw new ArgumentNullException(nameof(picklistService));
+            _autotaskAPIGet = autotaskAPIGet ?? throw new ArgumentNullException(nameof(autotaskAPIGet));
+            _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
         }
 
 
@@ -60,6 +67,10 @@ namespace AutoTaskTicketManager_Base
 
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
+            if (_picklistService == null)
+            {
+                throw new InvalidOperationException("IPicklistService is null in Worker.StartAsync().");
+            }
 
             //Get OS 
             var os = StartupConfiguration.DetermineOS();
@@ -75,7 +86,7 @@ namespace AutoTaskTicketManager_Base
             StartupConfiguration.LoadSupportDistros();
 
             //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
-            AutotaskAPIGet.PicklistInformation(_picklistService);
+            await _autotaskAPIGet.PicklistInformation(_picklistService);
 
 
             ////Loads all active Autotask Companies from the AutoTask API into Companies.companies Dictionary
@@ -97,7 +108,7 @@ namespace AutoTaskTicketManager_Base
             //StartupConfiguration.LoadAutoAssignMembers();
 
             ////Dictionary that holds the Flintfox senders who should be directly assigned to any ticket they raise.
-            //StartupConfiguration.LoadAutoAssignSenders();
+            StartupConfiguration.LoadAutoAssignSenders();
 
             ////Load open tickets into Dictionary
             //AutotaskAPIGet.GetNotCompletedTickets();
@@ -137,10 +148,10 @@ namespace AutoTaskTicketManager_Base
         {
             _logger.Information("Entering Main Worker Service ExecuteAsync Method\n");
 
+
             //Get the wait period at the bottom of each loop
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
             int timeDelay = Int32.Parse(tD) * 1000;
-
 
 
             try
@@ -181,8 +192,13 @@ namespace AutoTaskTicketManager_Base
 
                         //#####################################################
                         //Check if any new e-mail has arrived in Inbox.
-                        //await Task.Run(() => EmailManager.CheckEmail(_emailApiHelper), stoppingToken);
-                        await EmailManager.CheckEmail(_emailApiHelper);
+                        if (_configuration == null)
+                        {
+                            throw new InvalidOperationException("Configuration is null in Worker.cs before calling CheckEmail.");
+                        }
+
+
+                        await EmailManager.CheckEmail(_emailApiHelper, _configuration, _emailManager, _ticketHandler);
                         //#####################################################
 
 

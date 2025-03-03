@@ -44,10 +44,6 @@ namespace AutoTaskTicketManager_Base
         //Used to compare to the subjects of inbound e-mails to prevent creation of duplicate tickets
         public static Dictionary<string, string> companiesTicketsNotCompleted = new Dictionary<string, string>();
 
-        //Dictionary holds Autotask Resources that are Active
-        //ResourceID as Key (firstName, email) as Value in an Object.
-        public static Dictionary<Int64, object[]> autoTaskResources = new Dictionary<Int64, object[]>();
-
 
         #endregion
 
@@ -214,7 +210,41 @@ namespace AutoTaskTicketManager_Base
             return protectedSettings[Tkey];
         }
 
+        public static void LoadAutoAssignSenders()
+        {
+            try
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    var senderAssignments = context.SenderAssignments.ToList();
 
+                    if (autoAssignSenders.Count > 0)
+                    {
+                        autoAssignSenders.Clear();
+                    }
+
+                    foreach (var assignment in senderAssignments)
+                    {
+                        // Use Property names from SenderAssignments model
+                        string resourceId = assignment.AT_Resource_Id;
+                        string resourceName = assignment.Resource_Name;
+                        string resourceEmail = assignment.Resource_Email;
+                        string resourceRole = assignment.Resource_Role;
+                        bool resourceActive = assignment.Resource_Active;
+
+                        // Add to dictionary
+                        autoAssignSenders.Add(resourceId, new object[] {
+                    resourceName, resourceEmail, resourceRole, resourceActive
+                });
+                    }
+                }
+                Log.Debug($"Sender Assign Members loaded. Count: {autoAssignMembers.Count()}\n");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"AppConfig.cs LoadAutoAssignSenders() encountered an error: {ex}");
+            }
+        }
 
         #endregion
     }

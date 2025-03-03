@@ -1,4 +1,5 @@
 ﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.Common.Utilities;
 using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
@@ -9,6 +10,7 @@ using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -22,10 +24,21 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         private static ConfidentialClientApp _confidentialClientApp;
         private static readonly Serilog.ILogger _logger = Log.ForContext<EmailManager>();
         private readonly SecureEmailApiHelper _emailApiHelper;
+        private readonly IConfiguration _configuration;
+        private readonly TicketHandler _ticketHandler;
+        private readonly AutoTaskResources _autoTaskResources;
 
-        public EmailManager(SecureEmailApiHelper emailApiHelper)
+        public EmailManager(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, AutoTaskResources autoTaskResources, TicketHandler ticketHandler)
         {
             _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
+            _autoTaskResources = autoTaskResources ?? throw new ArgumentNullException(nameof(autoTaskResources));
+            _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
+            _configuration = configuration;
+        }
+
+        public async Task<string> CreateNewTicket(long coID, SecureEmailApiHelper emailApiHelper, IConfiguration configuration)
+        {
+            return await _ticketHandler.CreateTicket(coID, emailApiHelper, configuration);
         }
 
 
@@ -653,36 +666,50 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         #endregion
 
 
-
-
         #region "Used for passing MS Graph message Base64 string representation to AutoTask so it can be attached to AT Ticket"
         /// <summary>
         /// "Used for passing MS Graph message Base64 string representation to AutoTask so it can be attached to AT Ticket"
         /// </summary>
         /// <param name="msgId"></param>
         /// <returns></returns>
-        public static async Task<string> MSGraphGetCompleteMessageById(string msgId)
+        public static async Task<string> MSGraphGetCompleteMessageById(string msgId, SecureEmailApiHelper emailApiHelper)
         {
-            string[] scopes = new string[] { $"{config.ApiUrl}.default" };
-
-            var graphClient = GraphServiceClientSingleton.Instance; // Retrieve the GraphServiceClient instance from the singleton
-
-            var emailId = StartupConfiguration.GetConfig("SupportMailBox");
-            var messageId = msgId;
-
-            var urlPath = $"{config.ApiUrl}v1.0/users/{emailId}/messages/{messageId}/$value";
-
-            var stream = await graphClient.Users[emailId].Messages[messageId].Content
-                .GetAsync();
+            // Retrieve an access token (your implementation may vary)
+            var accessToken = await GetAccessTokenAsync();
+            if (accessToken == null)
             {
-                // Convert the stream to base64 encoding
-                string base64String = Convert.ToBase64String(ReadFully(stream));
+                throw new InvalidOperationException("Access token is null. Ensure token retrieval is configured correctly.");
+            }
 
-                //Console.WriteLine($"The Base64 string is {base64String}");
+            // Retrieve the support mailbox email from configuration
+            var emailId = StartupConfiguration.GetConfig("SupportMailBox");
+            if (string.IsNullOrEmpty(emailId))
+            {
+                throw new InvalidOperationException("SupportMailBox configuration is missing or empty.");
+            }
+
+            // Construct the URL for the Graph API request
+            // Ensure that config.ApiUrl ends with a trailing slash (or adjust the URL construction accordingly)
+            var url = $"{config.ApiUrl}v1.0/users/{emailId}/messages/{msgId}/$value";
+
+            using (var httpClient = new HttpClient())
+            {
+                // Set the Authorization header with the Bearer token
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                // Send the GET request to retrieve the message content as a stream
+                var response = await httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                // Read the content stream
+                var stream = await response.Content.ReadAsStreamAsync();
+
+                // Convert the stream to a byte array using your ReadFully method,
+                // then convert that byte array to a Base64-encoded string.
+                string base64String = Convert.ToBase64String(ReadFully(stream));
 
                 return base64String;
             }
-
         }
 
         // Helper method to read the entire stream for method 'MSGraphGetCompleteMessageById()'
@@ -764,7 +791,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
 
 
-        public static async Task CheckEmail(SecureEmailApiHelper emailApiHelper)
+        public static async Task CheckEmail(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, EmailManager emailManager, TicketHandler ticketHandler)
         {
             string accessToken = Authenticate.GetAccessToken();
 
@@ -787,7 +814,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 //The result is returned and processed by the EmailManager.ProcessAddresses() method.
                 await emailApiHelper.FetchAndProcessUnreadEmailsAsync($"{config.ApiUrl}v1.0/users/" + suffixUrl, accessToken, async (result) =>
                 {
-                    await ProcessAddresses(result, emailApiHelper);
+                    await ProcessAddresses(result, emailApiHelper, configuration, emailManager, ticketHandler);
                 });
 
 
@@ -1080,7 +1107,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// </summary>
         /// <param name="result">Object with Addresses to Process</param>
 
-        async static Task ProcessAddresses(JsonNode result, SecureEmailApiHelper emailApiHelper)
+        async static Task ProcessAddresses(JsonNode result, SecureEmailApiHelper emailApiHelper, IConfiguration configuration, EmailManager emailManager, TicketHandler _ticketHandler)
         {
 
             JsonArray nodes = ((result as JsonObject)!.ToArray()[1])!.Value as JsonArray;
@@ -1173,7 +1200,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                                 //Create an Autotask Ticket
                                 // The ticket id and the ticket number are saved in the Email class as AtTicketId and AtTicketNo
 
-                                string resultValue = await TicketHandler.CreateTicket(coID, emailApiHelper);
+                                string resultValue = await _ticketHandler.CreateTicket(coID, emailApiHelper, configuration);
+
 
                                 if (resultValue != "exception" && resultValue != null)
                                 {

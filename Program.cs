@@ -1,4 +1,5 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -76,6 +77,9 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddTransient<EmailManager>();
                 builder.Services.AddSingleton<IApiClient, ApiClient>();
                 builder.Services.AddSingleton<IPicklistService, PicklistService>();
+                builder.Services.AddSingleton<AutotaskAPIGet>();
+                builder.Services.AddSingleton<AutoTaskResources>();
+                builder.Services.AddSingleton<TicketHandler>();
 
 
                 //Register Worker

@@ -9,6 +9,7 @@ namespace AutoTaskTicketManager_Base.Models
         public DbSet<ConfigStore> ConfigStore { get; set; }
         public DbSet<CustomerSettings> CustomerSettings { get; set; }
         public DbSet<Scheduler> Schedulers { get; set; }
+        public DbSet<SenderAssignments> SenderAssignments { get; set; }
 
 
         #region OnConfiguring Method

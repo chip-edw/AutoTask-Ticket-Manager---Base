@@ -1,4 +1,6 @@
-﻿using AutoTaskTicketManager_Base.Common.Utilities;
+﻿using AutoTaskTicketManager_Base.AutoTaskAPI.Payloads;
+using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
+using AutoTaskTicketManager_Base.Common.Utilities;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,18 +11,37 @@ using System.Text.RegularExpressions;
 
 namespace AutoTaskTicketManager_Base.AutoTaskAPI
 {
-    public static class TicketHandler
+    public class TicketHandler
     {
+
+        private readonly AutoTaskResources _autoTaskResources;
+
+        public TicketHandler(AutoTaskResources autoTaskResources)
+        {
+            _autoTaskResources = autoTaskResources ?? throw new ArgumentNullException(nameof(autoTaskResources));
+        }
+
+        public async Task<int> ProcessTicket(int assignedResource)
+        {
+            int resourceRoleID = await _autoTaskResources.RetrieveDefaultServiceDeskRoleID(assignedResource);
+            return resourceRoleID;
+        }
+
         /// <summary>
         /// Creates an AT ticket for the AT Company ID passed by MSGraphAPI.CheckEmail
         /// </summary>
         /// <param name="companyId"></param>
         /// <returns></returns>
-        public static async Task<string> CreateTicket(Int64 companyId, SecureEmailApiHelper emailApiHelper)
+        public async Task<string> CreateTicket(Int64 companyId, SecureEmailApiHelper emailApiHelper, IConfiguration configuration)
         {
             // Do some cleanup of the e-mail subject before creating the ticket title
             string rawSubject = EmailManager.GetField("Subject");
             string title = ContentProcessor.EmailSubjectCleanup(rawSubject);
+
+            //Get Default Ticket Settings from Configuration
+            int queueID = configuration.GetValue<int>("DefaultTicketSettings:QueueID");
+            int issueType = configuration.GetValue<int>("DefaultTicketSettings:IssueType");
+            int subIssueType = configuration.GetValue<int>("DefaultTicketSettings:SubIssueType");
 
             //check if Auto-Assign Flag set for AT Company
             bool autoAssign = StartupConfiguration.autoAssignCompanies.TryGetValue(companyId, out bool value);
@@ -51,8 +72,6 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             //Get subject to make sure it is correct.
             string test = EmailManager.GetField("Subject");
 
-            string issueType = StartupConfiguration.GetConfig("IssueType");
-            string subIssueType = StartupConfiguration.GetConfig("SubIssueType");
 
             string descriptionText = "";
 
@@ -168,7 +187,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
 
             var client = new RestClient(options);
 
-
+            #region Build Ticket Body Payload
             //Get Auto assignments and assign accordingly
             if (autoAssign == true)
             {
@@ -231,7 +250,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                 var autoAssignBody = @"{" + "\n" +
 
                 @"    ""companyID"":" + (string)coId + "," + "\n" +
-                @"    ""QueueID"": 29683488," + "\n" +
+                @"    ""QueueID"":" + (int)queueID + "," + "\n" +
                 @"    ""dueDateTime"": ""2030-03-21T00:00:00""," + "\n" +
                 @"    ""priority"": 3," + "\n" +
                 @"    ""status"": 1," + "\n" +
@@ -296,7 +315,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                         Log.Verbose($"The Ticket Number is: {ticketNumber}");
 
                         //Get the Base64 string representation of the e-mail we want to attach to the AT ticket.
-                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId);
+                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId, emailApiHelper);
                         string base64Data = base64String.ToString();
 
                         //Pass information about the MS Graph E-mail Message to the method that will
@@ -325,6 +344,8 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             }
 
 
+            #region Sender Assignments 
+
             // This is where we check if the sender should be assigned as the Primary resource of the Ticket
             //The way it works is that early on in the MSGraphAPI.ProcessEmail class we check if the sender's e-mail is in the StartupConfiguration AutoAssignSenders Dictionary
             //if it is in the dictionary and the resource is 'Active' then we log it and update the Email class and make the SenderAssignment 'True'
@@ -350,48 +371,28 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                     {
                         assignedResource = Convert.ToInt32(entry.Key); // Return the key as soon as the email is found
 
-
-                        //Get the resource role
-                        resourceRole = entry.Value[2].ToString();
-
-                        //Use the correct default ResourceRoldId based on resource role
-                        if (resourceRole == "Technical")
-                        {
-                            resourceRoleID = Convert.ToInt32(StartupConfiguration.GetConfig("TechnicalResourceRoleId"));
-
-                        }
-                        if (resourceRole == "Functional")
-                        {
-                            resourceRoleID = Convert.ToInt32(StartupConfiguration.GetConfig("FunctionalResourceRoleId"));
-                        }
-
                         break;
                     }
                 }
 
+                //Get the defaultServiceDeskRoleID from AT
+                resourceRoleID = await _autoTaskResources.RetrieveDefaultServiceDeskRoleID(assignedResource);
 
+
+
+                Console.WriteLine($"Retrieved Role ID: {resourceRoleID}");
 
                 var request = new RestRequest(resource, Method.Post);
                 request.AddHeader("ApiIntegrationCode", apiIntegrationCode);
                 request.AddHeader("UserName", userName);
                 request.AddHeader("Secret", secret);
                 request.AddHeader("Content-Type", "application/json");
-                var body = @"{" + "\n" +
 
-                @"    ""companyID"":" + (string)coId + "," + "\n" +
-                @"    ""QueueID"": 29683488," + "\n" +
-                @"    ""dueDateTime"": ""2030-03-21T00:00:00""," + "\n" +
-                @"    ""priority"": 3," + "\n" +
-                @"    ""status"": 1," + "\n" +
-                @"    ""source"": 8," + "\n" +
-                @"    ""issueType"":" + issueType + "," + "\n" +
-                @"    ""subIssueType"":" + subIssueType + "," + "\n" +
-                @"    ""title"":" + '"' + (string)title + '"' + "," + "\n" +
-                @"    ""description"":" + '"' + (string)description + '"' + "," + "\n" +
-                @"    ""assignedResourceID"" :" + assignedResource + "," + "\n" +
-                @"    ""assignedResourceRoleID"" :" + resourceRoleID + "," + "\n" +
-                @"" + "\n" +
-                @"}";
+
+                //Use DTO to create serialized ticket body
+                var body = TicketRequestPayload.Serialize(companyId, queueID, DateTime.Now, 3, 1, 8, issueType, subIssueType, title,
+                    description, assignedResource, resourceRoleID);
+
                 request.AddParameter("application/json", body, ParameterType.RequestBody);
 
                 var apiRequestBody = request.ToString();
@@ -444,7 +445,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                         Log.Verbose($"The Ticket Number is: {ticketNumber}");
 
                         //Get the Base64 string representation of the e-mail we want to attach to the AT ticket.
-                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId);
+                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId, emailApiHelper);
                         string base64Data = base64String.ToString();
 
                         //Pass information about the MS Graph E-mail Message to the method that will
@@ -468,9 +469,11 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                     return "exception";
                 }
 
-
-
             }
+
+            #endregion
+
+            #region Base Ticket Creation
 
             else
             {
@@ -479,20 +482,10 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                 request.AddHeader("UserName", userName);
                 request.AddHeader("Secret", secret);
                 request.AddHeader("Content-Type", "application/json");
-                var body = @"{" + "\n" +
 
-                @"    ""companyID"":" + (string)coId + "," + "\n" +
-                @"    ""QueueID"": 29683488," + "\n" +
-                @"    ""dueDateTime"": ""2030-03-21T00:00:00""," + "\n" +
-                @"    ""priority"": 3," + "\n" +
-                @"    ""status"": 1," + "\n" +
-                @"    ""source"": 8," + "\n" +
-                @"    ""issueType"":" + issueType + "," + "\n" +
-                @"    ""subIssueType"":" + subIssueType + "," + "\n" +
-                @"    ""title"":" + '"' + (string)title + '"' + "," + "\n" +
-                @"    ""description"":" + '"' + (string)description + '"' + "," + "\n" +
-                @"" + "\n" +
-                @"}";
+                var body = TicketRequestPayload.Serialize(companyId, queueID, DateTime.Now, 3, 1, 8, issueType, subIssueType, title, description);
+
+
                 request.AddParameter("application/json", body, ParameterType.RequestBody);
 
                 response = client.Execute(request);
@@ -543,7 +536,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                         Log.Verbose($"The Ticket Number is: {ticketNumber}");
 
                         //Get the Base64 string representation of the e-mail we want to attach to the AT ticket.
-                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId);
+                        var base64String = await EmailManager.MSGraphGetCompleteMessageById(messageId, emailApiHelper);
                         string base64Data = base64String.ToString();
 
                         //Pass information about the MS Graph E-mail Message to the method that will
@@ -572,6 +565,10 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             return "exception";
         }
 
+        #endregion
+
+        #endregion
+
 
         /// <summary>
         /// Manages the creation of an AT ticket attachment of the E-mail prefixed with the AT ticket number
@@ -581,7 +578,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         /// it is not the ticket number.
         /// <param name="title"></param> this is going to be the subject of the e-mail we are attaching prefixed with the AT ticket number.
         /// <param name="data"></param> this is the Base64 string representation of the e-mail.
-        public static async void CreateTicketEmailAttachment(string atId, string title, string data)
+        public static async Task CreateTicketEmailAttachment(string atId, string title, string data)
         {
             //make sure we name the email to attach with the .eml format
             string filename = title + ".eml";

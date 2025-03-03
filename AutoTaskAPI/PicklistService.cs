@@ -58,7 +58,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             }
             catch (Exception ex)
             {
-                Log.Error($"Error retrieving AutpTask Picklists - PicklistService.GetPicklistInformation(): - {ex}");
+                Log.Error($"Error retrieving AutoTask Picklists - PicklistService.GetPicklistInformation(): - {ex}");
             }
         }
     }
