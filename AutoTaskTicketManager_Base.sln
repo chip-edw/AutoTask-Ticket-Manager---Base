@@ -3,7 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoTaskTicketManager_Base", "AutoTaskTicketManager_Base.csproj", "{FE461F62-1783-4040-BFBD-A762C3C14326}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginContracts", "PluginContracts\PluginContracts.csproj", "{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoTaskTicketManager_Base", "AutoTask Ticket Manager - Base\AutoTaskTicketManager_Base.csproj", "{2992EDCE-3C55-B0E7-3517-76A14B776D21}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E} = {0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299} = {BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchedulingPlugin", "SchedulingPlugin\SchedulingPlugin.csproj", "{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299} = {BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +22,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FE461F62-1783-4040-BFBD-A762C3C14326}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE461F62-1783-4040-BFBD-A762C3C14326}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE461F62-1783-4040-BFBD-A762C3C14326}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE461F62-1783-4040-BFBD-A762C3C14326}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCA0DD5E-2EFB-472C-80D1-21CDF06CE299}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2992EDCE-3C55-B0E7-3517-76A14B776D21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2992EDCE-3C55-B0E7-3517-76A14B776D21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2992EDCE-3C55-B0E7-3517-76A14B776D21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2992EDCE-3C55-B0E7-3517-76A14B776D21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EBE3924-15E6-4651-A4F7-EF6DDA3E747E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

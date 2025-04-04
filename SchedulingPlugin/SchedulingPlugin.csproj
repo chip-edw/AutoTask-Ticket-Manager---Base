@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PluginContracts\PluginContracts.csproj" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <PropertyGroup>
+      <PluginsOutput>$(SolutionDir)AutoTask Ticket Manager - Base\bin\Debug\net8.0\Plugins\</PluginsOutput>
+    </PropertyGroup>
+
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsOutput)" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(PluginsOutput)" />
+  </Target>
+
+</Project>

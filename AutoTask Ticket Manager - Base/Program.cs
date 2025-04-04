@@ -1,6 +1,7 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.MSGraphAPI;
+using AutoTaskTicketManager_Base.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -80,6 +81,8 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<AutotaskAPIGet>();
                 builder.Services.AddSingleton<AutoTaskResources>();
                 builder.Services.AddSingleton<TicketHandler>();
+                builder.Services.AddSingleton<PluginManager>();
+
 
 
                 //Register Worker

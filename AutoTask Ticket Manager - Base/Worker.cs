@@ -1,5 +1,6 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.MSGraphAPI;
+using AutoTaskTicketManager_Base.Services;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base
@@ -27,10 +28,12 @@ namespace AutoTaskTicketManager_Base
         private readonly IConfiguration _configuration;
         private readonly AutotaskAPIGet _autotaskAPIGet;
         private readonly TicketHandler _ticketHandler;
+        private readonly PluginManager _pluginManager;
+
 
         public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
             SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
-            IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler)
+            IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
@@ -40,6 +43,8 @@ namespace AutoTaskTicketManager_Base
             _picklistService = picklistService ?? throw new ArgumentNullException(nameof(picklistService));
             _autotaskAPIGet = autotaskAPIGet ?? throw new ArgumentNullException(nameof(autotaskAPIGet));
             _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
+            _pluginManager = pluginManager ?? throw new ArgumentNullException(nameof(pluginManager));
+
         }
 
 
@@ -140,6 +145,10 @@ namespace AutoTaskTicketManager_Base
             _logger.Information("\r\n\r\n");
 
 
+            //Loading the Plugins before the background Loop of the Worker Service starts.
+            _pluginManager.LoadPlugins();
+
+
             await base.StartAsync(cancellationToken);
         }
 
@@ -189,6 +198,12 @@ namespace AutoTaskTicketManager_Base
                     {
 
                         Console.WriteLine("");
+
+                        //Looping and loading each plugin before we start processing.
+                        foreach (var plugin in _pluginManager.Plugins)
+                        {
+                            await plugin.ExecuteAsync(stoppingToken);
+                        }
 
                         //#####################################################
                         //Check if any new e-mail has arrived in Inbox.

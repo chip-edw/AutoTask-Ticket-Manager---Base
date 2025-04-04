@@ -36,12 +36,6 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             _configuration = configuration;
         }
 
-        public async Task<string> CreateNewTicket(long coID, SecureEmailApiHelper emailApiHelper, IConfiguration configuration)
-        {
-            return await _ticketHandler.CreateTicket(coID, emailApiHelper, configuration);
-        }
-
-
 
         // Initialize the ConfidentialClientApp with dependencies
         public static void Initialize(IConfiguration configuration, IMsalHttpClientFactory httpClientFactory)
@@ -334,7 +328,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
             _logger.Debug("await EditAndSendDraftReplyAllMessage()\n");
             //Test CreateAndEditDraftReplyAllMessage
-            await EditAndSendDraftReplyAllMessage();
+            await EditAndSendDraftReplyAllMessage(emailApiHelper);
 
             //##################################################
         }
@@ -342,7 +336,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         #endregion
 
         #region "EditAndSendDraftReplyAllMessage"
-        private static async Task EditAndSendDraftReplyAllMessage()
+        private static async Task EditAndSendDraftReplyAllMessage(SecureEmailApiHelper emailApiHelper)
         {
             //Create function wide variables for manipulating the content of the message body
             string oldContent = "";
@@ -363,7 +357,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             //var app = ConfidentialClientApp.Instance.GetApplication();
 
             var clientSecretCredential = new ClientSecretCredential(
-                config.Tenant, config.ClientId, config.ClientSecret);
+                StartupConfiguration.GetMsGraphConfig("Tenant"), StartupConfiguration.GetMsGraphConfig("ClientID"),
+                StartupConfiguration.GetMsGraphConfig("ClientSecret"));
 
             var graphClient = new GraphServiceClient(clientSecretCredential, scopes);
 
@@ -427,7 +422,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                 _logger.Debug("Loading Customer e-mail content into string");
                 string htmlEmail = draftReplyAllMessage.Body!.Content!.ToString();
 
-                //Get Logo
+                //Get Logo - Need to add a try statement around Logo with Good logging
                 _logger.Debug("Loading Logo for outbound e-mail body creation");
                 string logo = GetLogo(GetField("SupportDistro"));
 
@@ -791,7 +786,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         }
 
 
-        public static async Task CheckEmail(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, EmailManager emailManager, TicketHandler ticketHandler)
+        public static async Task CheckEmail(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, EmailManager emailManager,
+            TicketHandler ticketHandler)
         {
             string accessToken = Authenticate.GetAccessToken();
 

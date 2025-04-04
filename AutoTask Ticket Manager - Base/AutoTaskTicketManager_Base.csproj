@@ -6,7 +6,27 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-AutoTask_Ticket_Manager___Base-fce012e0-4fd9-4002-888e-2b669fc1206b</UserSecretsId>
     <RootNamespace>AutoTaskTicketManager_Base</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PluginContracts\PluginContracts.csproj" />
+    <ProjectReference Include="..\SchedulingPlugin\SchedulingPlugin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Logos\flintech.png" />
+    <None Remove="Logos\flintfox.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Logos\flintech.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Logos\flintfox.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

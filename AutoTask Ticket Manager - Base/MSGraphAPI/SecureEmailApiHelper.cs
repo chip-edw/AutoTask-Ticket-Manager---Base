@@ -202,6 +202,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
                     // save draftMessageID to Email static class.
                     EmailManager.SetField("DraftMsgId", draftMessageId);
 
+                    string testGetDraftMsgId = EmailManager.GetField("DraftMsgId");
+
                     return;
                 }
                 else

@@ -145,6 +145,12 @@ namespace AutoTaskTicketManager_Base
             Log.Debug("MS Graph Configs Loaded\n");
         }
 
+        internal static string GetMsGraphConfig(string Tkey)
+        {
+            return graphConfigs[Tkey];
+        }
+
+
         /// <summary>
         /// Loads the Active Support e-mail distros into the dictionary named "supportDistros"
         /// </summary>
