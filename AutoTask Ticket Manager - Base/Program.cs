@@ -112,7 +112,6 @@ namespace AutoTaskTicketManager_Base
                     Log.Information($"{nameof(StartupConfiguration.LoadMsGraphConfig)}");
 
                     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-                    //var httpClientFactory = new MsalHttpClientFactory(config);
                     var httpClientFactory = scope.ServiceProvider.GetRequiredService<IMsalHttpClientFactory>();
                     EmailManager.Initialize(config, httpClientFactory);
                     Log.Information($"Email Manager {nameof(EmailManager.Initialize)}");

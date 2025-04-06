@@ -23,7 +23,8 @@
                 //Setup and start the Core Application
                 if (worker is Worker actualWorker)
                 {
-                    await actualWorker.StartAsync(_cts.Token); // Important! runs setup fop App.
+                    await actualWorker.StartAsync(_cts.Token); // Important! runs setup fop App....
+
                 }
 
                 await worker.DoWorkAsync(_cts.Token);

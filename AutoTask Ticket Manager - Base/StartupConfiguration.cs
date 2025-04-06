@@ -101,7 +101,6 @@ namespace AutoTaskTicketManager_Base
             return autoAssignSenders[Tkey];
         }
 
-
         public static bool LoadProtectedSettings(ApplicationDbContext dbContext)
         {
             Log.Debug("Loading Protected Settings Method Fired from StartupConfiguration");
