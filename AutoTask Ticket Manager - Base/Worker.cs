@@ -1,6 +1,9 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
+using AutoTaskTicketManager_Base.Scheduler;
 using AutoTaskTicketManager_Base.Services;
+using PluginContracts;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base
@@ -20,7 +23,6 @@ namespace AutoTaskTicketManager_Base
         //private CancellationTokenSource _cancellationTokenSource;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-
         private readonly ConfidentialClientApp _confidentialClientApp;
         private readonly EmailManager _emailManager;
         private readonly SecureEmailApiHelper _emailApiHelper;
@@ -30,10 +32,13 @@ namespace AutoTaskTicketManager_Base
         private readonly TicketHandler _ticketHandler;
         private readonly PluginManager _pluginManager;
 
+        private readonly IServiceScopeFactory _scopeFactory;
+
 
         public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
             SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
-            IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager)
+            IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager,
+            IServiceScopeFactory scopeFactory)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
@@ -44,6 +49,7 @@ namespace AutoTaskTicketManager_Base
             _autotaskAPIGet = autotaskAPIGet ?? throw new ArgumentNullException(nameof(autotaskAPIGet));
             _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
             _pluginManager = pluginManager ?? throw new ArgumentNullException(nameof(pluginManager));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
 
         }
 
@@ -87,8 +93,11 @@ namespace AutoTaskTicketManager_Base
                 "Waiting 10 sec to ensure all Network Dependancies available. \n\n");
             Thread.Sleep(10 * 1000);
 
+
+
+
             //Loads the supportDistros Dictionary       
-            StartupConfiguration.LoadSupportDistros();
+            //StartupConfiguration.LoadSupportDistros(_dbOptions);
 
             //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
             await _autotaskAPIGet.PicklistInformation(_picklistService);
@@ -107,13 +116,13 @@ namespace AutoTaskTicketManager_Base
             //StartupConfiguration.UpdateDataBaseWithMissingCompanies();
 
             //Loads all the AT Companies into a Dictionary that have the auto assign flag set
-            StartupConfiguration.LoadAutoAssignCompanies();
+            //StartupConfiguration.LoadAutoAssignCompanies(_dbOptions);
 
             ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
             //StartupConfiguration.LoadAutoAssignMembers();
 
             ////Dictionary that holds the Flintfox senders who should be directly assigned to any ticket they raise.
-            StartupConfiguration.LoadAutoAssignSenders();
+            // StartupConfiguration.LoadAutoAssignSenders(_dbOptions);
 
             ////Load open tickets into Dictionary
             //AutotaskAPIGet.GetNotCompletedTickets();
@@ -122,11 +131,30 @@ namespace AutoTaskTicketManager_Base
             //AutotaskAPIGet.GetAutoTaskActiveResources();
 
 
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            //// Start Seperate Thread to run Scheduler Timer in the background
-            //_schedulerTimer = new Timer(DoScheduler, null, schedulerRunDelay, Timeout.Infinite);
+                StartupConfiguration.LoadSupportDistros(dbContext);
+                StartupConfiguration.LoadAutoAssignCompanies(dbContext);
+                StartupConfiguration.LoadAutoAssignSenders(dbContext);
 
-            //Log.Information("Scheduler Thread Started");
+                var schedulerJobsInner = dbContext.Schedulers
+                    .Where(j => j.TaskActive)
+                    .Select(j => new SchedulerJobConfig
+                    {
+                        TaskID = j.TaskID,
+                        TaskName = j.TaskName,
+                        FrequencyMinutes = j.FrequencyMinutes,
+                        TaskActive = j.TaskActive,
+                        NextRunTime = j.NextRunTime
+                    })
+                    .ToList();
+
+                var resultReporter = new SchedulerResultReporter(dbContext);
+                _pluginManager.AssignSchedulerJobs(schedulerJobsInner, resultReporter);
+            }
+
 
 
             //Get Assembly Version
@@ -145,15 +173,41 @@ namespace AutoTaskTicketManager_Base
             _logger.Information("\r\n\r\n");
 
 
-            //Loading the Plugins before the background Loop of the Worker Service starts.
+
+            // ########################## Loading Plugins and setting up the scheduler Jobs ##########################
+
+            Log.Information("Starting Plugin Loading...");
+
+
+            // 1. Loading the Plugins before the background Loop of the Worker Service starts.
             _pluginManager.LoadPlugins();
 
 
-            await base.StartAsync(cancellationToken);
+
+            //Triggering the background Scheduler
+            foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
+            {
+                if (plugin is SchedulingPlugin.SchedulingPlugin schedulingPlugin)
+                {
+                    schedulingPlugin.Start();
+                }
+            }
+
+
+
+            // TEMP MANUAL TRIGGER
+            foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
+            {
+                await plugin.RunScheduledJobsAsync(CancellationToken.None);
+            }
+
+
+            Log.Information("Starting AutoTaskTicketManager Worker...");
+            //await base.StartAsync(cancellationToken);
         }
 
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _logger.Information("Entering Main Worker Service ExecuteAsync Method\n");
 
@@ -163,10 +217,20 @@ namespace AutoTaskTicketManager_Base
             int timeDelay = Int32.Parse(tD) * 1000;
 
 
+            //########################################################################################
+            _logger.Information(">>> About to get access token...");
+
+            Task<string> tokenTask = _confidentialClientApp.GetAccessToken();
+
+            _logger.Information(">>> Task for token created. Status: {Status}", tokenTask.Status);
+
+
+            //########################################################################################
+
             try
             {
                 string accessToken = await _confidentialClientApp.GetAccessToken();
-                _logger.Debug("Acquired Access Token for Startup");
+                _logger.Information(">>> Token acquired: {FirstTen}", accessToken.Substring(0, 10));
 
                 //Send a test e-mail message using the refactored ProtectedApiCallHelper Class
 
@@ -189,7 +253,7 @@ namespace AutoTaskTicketManager_Base
             }
 
 
-            while (!stoppingToken.IsCancellationRequested && !cancelTokenIssued)
+            while (!cancellationToken.IsCancellationRequested && !cancelTokenIssued)
             {
                 try
                 {
@@ -202,7 +266,7 @@ namespace AutoTaskTicketManager_Base
                         //Looping and loading each plugin before we start processing.
                         foreach (var plugin in _pluginManager.Plugins)
                         {
-                            await plugin.ExecuteAsync(stoppingToken);
+                            await plugin.ExecuteAsync(cancellationToken);
                         }
 
                         //#####################################################
@@ -232,7 +296,7 @@ namespace AutoTaskTicketManager_Base
                         {
                             _logger.Debug($"Messages to process: {unreadCount}.  0 count of messages are only recorded in verbose logging mode\n");
 
-                            await Task.Delay(1000, stoppingToken);
+                            await Task.Delay(1000, cancellationToken);
 
                         }
                         else if (unreadCount == 0)
@@ -240,21 +304,21 @@ namespace AutoTaskTicketManager_Base
                             _logger.Verbose("...");
                             _logger.Verbose($"No Messages to Process pausing for {timeDelay} seconds. \nSet in SQL DB AppConfig Table under TimeDelay");
                             _logger.Verbose("Worker Loop - Pre Schedule");
-                            await Task.Delay(timeDelay, stoppingToken); //Pausing for seconds set in SQL DB AppConfig Table under TimeDelay
+                            await Task.Delay(timeDelay, cancellationToken); //Pausing for seconds set in SQL DB AppConfig Table under TimeDelay
 
                         }
 
                     }
                     else
                     {
-                        if (stoppingToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
+                        if (cancellationToken.IsCancellationRequested || _cancellationTokenSource.IsCancellationRequested ||
                             cancelTokenIssued == true)
                         {
                             _logger.Information("\n ... Cancellation requested. Exiting worker service loop... \n");
                             break;
                         }
 
-                        await Task.Delay(500, stoppingToken);
+                        await Task.Delay(500, cancellationToken);
                         await _confidentialClientApp.GetAccessToken();
                         _logger.Debug("Aquired Bearer Token");
                     }
@@ -267,7 +331,7 @@ namespace AutoTaskTicketManager_Base
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Worker.cs Failed to acquire an Access Bearer Token. Check stuff... {ex}");
+                    _logger.Error(ex, "Worker.cs failed to acquire an Access Bearer Token. Exception details:");
                 }
             }
 
@@ -284,10 +348,12 @@ namespace AutoTaskTicketManager_Base
         /// <returns></returns>
         public async Task DoWorkAsync(CancellationToken cancellationToken)
         {
-            // Implement your logic for DoWorkAsync here
-            // For example, you might want to call methods or perform some background work
+            Log.Information($"DoWorkAsync starting. CancellationRequested: {cancellationToken.IsCancellationRequested}");
+
+            await ExecuteAsync(cancellationToken);// This is the main background loop of the app that is the core
 
         }
+
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {

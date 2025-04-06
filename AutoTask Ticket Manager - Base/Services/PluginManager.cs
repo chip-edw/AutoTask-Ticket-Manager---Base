@@ -1,6 +1,7 @@
 ﻿using PluginContracts;
 using System.Runtime.Loader;
 
+
 namespace AutoTaskTicketManager_Base.Services
 {
     public class PluginManager
@@ -63,5 +64,21 @@ namespace AutoTaskTicketManager_Base.Services
             _logger.LogInformation("Plugin load complete. Total loaded: {Count}", _plugins.Count);
 
         }
+
+        public void AssignSchedulerJobs(IEnumerable<SchedulerJobConfig> jobs, ISchedulerResultReporter reporter)
+        {
+            foreach (var plugin in _plugins.OfType<ISchedulerPlugin>())
+            {
+                var pluginJobs = jobs
+                    .Where(j => j.TaskName.Length > 1) // This is for filtering in the future  .StartsWith(plugin.Name))
+                    .ToList();
+
+                plugin.SetJobs(pluginJobs);
+                plugin.SetResultReporter(reporter);
+
+                _logger.LogInformation("Assigned {Count} jobs to plugin {PluginName}", pluginJobs.Count, plugin.Name);
+            }
+        }
+
     }
 }
