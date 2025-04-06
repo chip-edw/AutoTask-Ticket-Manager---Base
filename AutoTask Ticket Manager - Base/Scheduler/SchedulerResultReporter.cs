@@ -13,20 +13,21 @@ namespace AutoTaskTicketManager_Base.Scheduler
             _dbContext = dbContext;
         }
 
-        public async Task ReportJobResultAsync(SchedulerJobExecutionResult result)
+        public async Task ReportJobResultAsync(SchedulerJobExecutionResult result, CancellationToken cancellationToken = default)
         {
-            var job = await _dbContext.Schedulers.SingleOrDefaultAsync(j => j.TaskID == result.TaskID);
+            var job = await _dbContext.Schedulers
+                .FirstOrDefaultAsync(s => s.TaskID == result.TaskID, cancellationToken);
+
             if (job != null)
             {
                 job.LastRunTime = result.LastRunTime;
                 job.NextRunTime = result.NextRunTime;
-                job.Status = result.Status;
 
-                await _dbContext.SaveChangesAsync();
+                // Optional: If you want to track last result/status in DB, add a column like `LastResultStatus`
+                // job.LastResultStatus = result.Status;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
         }
     }
-
-
 }
-

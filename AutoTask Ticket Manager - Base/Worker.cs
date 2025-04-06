@@ -17,6 +17,8 @@ namespace AutoTaskTicketManager_Base
 
     public class Worker : BackgroundService, IWorkerService
     {
+        #region Private readonly and Constructor
+
         private readonly Serilog.ILogger _logger;
         private volatile bool cancelTokenIssued = false;
 
@@ -31,14 +33,16 @@ namespace AutoTaskTicketManager_Base
         private readonly AutotaskAPIGet _autotaskAPIGet;
         private readonly TicketHandler _ticketHandler;
         private readonly PluginManager _pluginManager;
+        private readonly ISchedulerJobLoader _schedulerJobLoader;
+        private readonly ISchedulerResultReporter _resultReporter;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        private readonly IServiceScopeFactory _scopeFactory;
 
 
         public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
             SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
             IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager,
-            IServiceScopeFactory scopeFactory)
+            ISchedulerJobLoader schedulerJobLoader, ISchedulerResultReporter resultReporter, IServiceScopeFactory serviceScopeFactory)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
@@ -49,9 +53,12 @@ namespace AutoTaskTicketManager_Base
             _autotaskAPIGet = autotaskAPIGet ?? throw new ArgumentNullException(nameof(autotaskAPIGet));
             _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
             _pluginManager = pluginManager ?? throw new ArgumentNullException(nameof(pluginManager));
-            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
+            _schedulerJobLoader = schedulerJobLoader ?? throw new ArgumentNullException(nameof(_schedulerJobLoader));
+            _resultReporter = resultReporter ?? throw new ArgumentNullException(nameof(resultReporter));
         }
+
+        #endregion
 
 
         public async void StopService()
@@ -131,7 +138,7 @@ namespace AutoTaskTicketManager_Base
             //AutotaskAPIGet.GetAutoTaskActiveResources();
 
 
-            using (var scope = _scopeFactory.CreateScope())
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
@@ -182,28 +189,6 @@ namespace AutoTaskTicketManager_Base
             // 1. Loading the Plugins before the background Loop of the Worker Service starts.
             _pluginManager.LoadPlugins();
 
-
-
-            //Triggering the background Scheduler
-            foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
-            {
-                if (plugin is SchedulingPlugin.SchedulingPlugin schedulingPlugin)
-                {
-                    schedulingPlugin.Start();
-                }
-            }
-
-
-
-            // TEMP MANUAL TRIGGER
-            foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
-            {
-                await plugin.RunScheduledJobsAsync(CancellationToken.None);
-            }
-
-
-            Log.Information("Starting AutoTaskTicketManager Worker...");
-            //await base.StartAsync(cancellationToken);
         }
 
 
@@ -216,8 +201,6 @@ namespace AutoTaskTicketManager_Base
             var tD = StartupConfiguration.GetProtectedSetting("TimeDelay");
             int timeDelay = Int32.Parse(tD) * 1000;
 
-
-            //########################################################################################
             _logger.Information(">>> About to get access token...");
 
             Task<string> tokenTask = _confidentialClientApp.GetAccessToken();
@@ -225,7 +208,6 @@ namespace AutoTaskTicketManager_Base
             _logger.Information(">>> Task for token created. Status: {Status}", tokenTask.Status);
 
 
-            //########################################################################################
 
             try
             {
@@ -251,6 +233,29 @@ namespace AutoTaskTicketManager_Base
 
                 _logger.Error("Graph API call correlation ID: {CorrelationId}");
             }
+
+
+            //####################### WE INITIALIZE THE LOADED PLUGINS HERE ##########################
+            //  All App dependancies and supporting services should have been loaded or initialized
+
+            #region Scheduler Plugin initialization
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var jobLoader = scope.ServiceProvider.GetRequiredService<ISchedulerJobLoader>();
+                var jobs = await jobLoader.LoadJobsAsync(cancellationToken);
+
+                foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
+                {
+                    plugin.SetJobs(jobs);
+                    plugin.SetResultReporter(_resultReporter);
+                    plugin.Start();
+                }
+            }
+
+            #endregion
+
+
+            //########################################################################################
 
 
             while (!cancellationToken.IsCancellationRequested && !cancelTokenIssued)

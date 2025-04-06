@@ -62,7 +62,10 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<AutoTaskResources>();
                 builder.Services.AddSingleton<TicketHandler>();
                 builder.Services.AddSingleton<PluginManager>();
+                builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
 
+
+                //Register Scoped services
                 builder.Services.AddScoped<ISchedulerResultReporter>(provider =>
                 {
                     var dbContext = provider.GetRequiredService<ApplicationDbContext>();

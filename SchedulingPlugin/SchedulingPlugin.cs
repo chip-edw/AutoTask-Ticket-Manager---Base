@@ -4,12 +4,12 @@ namespace SchedulingPlugin
 {
     public class SchedulingPlugin : ISchedulerPlugin
     {
-        //Set the timer and time span between polling of the Schedule DB
-        private Timer? _schedulerTimer;
-        private readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30); // adjust as needed
-
+        private CancellationTokenSource? _cts;
+        private Task? _schedulerTask;
         private List<SchedulerJobConfig> _jobs = new();
         private ISchedulerResultReporter? _reporter;
+
+        private readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30);
 
         public string Name => "SchedulingPlugin";
 
@@ -23,19 +23,46 @@ namespace SchedulingPlugin
             _reporter = reporter;
         }
 
+        public void Start()
+        {
+            _cts = new CancellationTokenSource();
+            _schedulerTask = Task.Run(() => RunSchedulerLoop(_cts.Token));
+            Console.WriteLine($"[{Name}] Scheduler loop started.");
+        }
+
+        private async Task RunSchedulerLoop(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await RunScheduledJobsAsync(token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[{Name}] Error in scheduler loop: {ex.Message}");
+                }
+
+                await Task.Delay(_pollInterval, token);
+            }
+
+            Console.WriteLine($"[{Name}] Scheduler loop exiting.");
+        }
+
         public async Task RunScheduledJobsAsync(CancellationToken cancellationToken)
         {
             foreach (var job in _jobs)
             {
                 if (!job.TaskActive || job.NextRunTime > DateTime.Now)
-                    continue;
+                    Console.WriteLine($"Dosen't seem any Jobs are being picked up... ");
+
+                continue;
 
                 Console.WriteLine($"[{Name}] Running job: {job.TaskName} at {DateTime.Now}");
 
                 try
                 {
-                    // Example: you can switch on job.TaskName here if needed
-                    await Task.Delay(500, cancellationToken); // Simulate job work
+                    await Task.Delay(500, cancellationToken); // Simulated work
 
                     if (_reporter != null)
                     {
@@ -66,36 +93,18 @@ namespace SchedulingPlugin
             }
         }
 
-        // Not used in scheduled mode, but required by IPlugin
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            // Not used for scheduled plugin execution
             return Task.CompletedTask;
-        }
-
-        public void Start()
-        {
-            _schedulerTimer = new Timer(async _ =>
-            {
-                try
-                {
-                    await RunScheduledJobsAsync(CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[{Name}] Scheduler timer error: {ex.Message}");
-                }
-            }, null, TimeSpan.Zero, _pollInterval);
-
-            Console.WriteLine($"[{Name}] Scheduler background timer started (every {_pollInterval.TotalSeconds} sec)");
         }
 
         public void Stop()
         {
-            _schedulerTimer?.Dispose();
+            _cts?.Cancel();
+            _schedulerTask?.Wait();
             Console.WriteLine($"[{Name}] Scheduler stopped.");
         }
-
-
-
     }
+
 }

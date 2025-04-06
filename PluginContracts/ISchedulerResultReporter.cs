@@ -2,7 +2,8 @@
 {
     public interface ISchedulerResultReporter
     {
-        Task ReportJobResultAsync(SchedulerJobExecutionResult result);
+        Task ReportJobResultAsync(SchedulerJobExecutionResult result, CancellationToken cancellationToken = default);
     }
+
 }
 
