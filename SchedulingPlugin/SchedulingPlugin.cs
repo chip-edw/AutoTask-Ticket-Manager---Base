@@ -1,21 +1,24 @@
-﻿using PluginContracts;
+﻿using Microsoft.Extensions.DependencyInjection;
+using PluginContracts;
+
+
+
 
 namespace SchedulingPlugin
 {
     public class SchedulingPlugin : ISchedulerPlugin
     {
-        private CancellationTokenSource? _cts;
-        private Task? _schedulerTask;
-        private List<SchedulerJobConfig> _jobs = new();
+        private IEnumerable<SchedulerJobConfig> _jobs = new List<SchedulerJobConfig>();
         private ISchedulerResultReporter? _reporter;
+        private Thread? _schedulerThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private readonly string _name = "SchedulingPlugin";
 
-        private readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30);
-
-        public string Name => "SchedulingPlugin";
+        public string Name => _name;
 
         public void SetJobs(IEnumerable<SchedulerJobConfig> jobs)
         {
-            _jobs = jobs.ToList();
+            _jobs = jobs;
         }
 
         public void SetResultReporter(ISchedulerResultReporter reporter)
@@ -25,86 +28,112 @@ namespace SchedulingPlugin
 
         public void Start()
         {
-            _cts = new CancellationTokenSource();
-            _schedulerTask = Task.Run(() => RunSchedulerLoop(_cts.Token));
-            Console.WriteLine($"[{Name}] Scheduler loop started.");
-        }
-
-        private async Task RunSchedulerLoop(CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
+            _cancellationTokenSource = new CancellationTokenSource();
+            _schedulerThread = new Thread(() => RunSchedulerLoop(_cancellationTokenSource.Token))
             {
-                try
-                {
-                    await RunScheduledJobsAsync(token);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[{Name}] Error in scheduler loop: {ex.Message}");
-                }
-
-                await Task.Delay(_pollInterval, token);
-            }
-
-            Console.WriteLine($"[{Name}] Scheduler loop exiting.");
-        }
-
-        public async Task RunScheduledJobsAsync(CancellationToken cancellationToken)
-        {
-            foreach (var job in _jobs)
-            {
-                if (!job.TaskActive || job.NextRunTime > DateTime.Now)
-                    Console.WriteLine($"Dosen't seem any Jobs are being picked up... ");
-
-                continue;
-
-                Console.WriteLine($"[{Name}] Running job: {job.TaskName} at {DateTime.Now}");
-
-                try
-                {
-                    await Task.Delay(500, cancellationToken); // Simulated work
-
-                    if (_reporter != null)
-                    {
-                        await _reporter.ReportJobResultAsync(new SchedulerJobExecutionResult
-                        {
-                            TaskID = job.TaskID,
-                            LastRunTime = DateTime.Now,
-                            NextRunTime = DateTime.Now.AddMinutes(job.FrequencyMinutes),
-                            Status = "Success"
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[{Name}] Failed to run job {job.TaskName}: {ex.Message}");
-
-                    if (_reporter != null)
-                    {
-                        await _reporter.ReportJobResultAsync(new SchedulerJobExecutionResult
-                        {
-                            TaskID = job.TaskID,
-                            LastRunTime = DateTime.Now,
-                            NextRunTime = DateTime.Now.AddMinutes(job.FrequencyMinutes),
-                            Status = "Failed"
-                        });
-                    }
-                }
-            }
-        }
-
-        public Task ExecuteAsync(CancellationToken cancellationToken)
-        {
-            // Not used for scheduled plugin execution
-            return Task.CompletedTask;
+                IsBackground = true,
+                Name = "SchedulingPluginThread"
+            };
+            _schedulerThread.Start();
         }
 
         public void Stop()
         {
-            _cts?.Cancel();
-            _schedulerTask?.Wait();
-            Console.WriteLine($"[{Name}] Scheduler stopped.");
+            _cancellationTokenSource?.Cancel();
         }
-    }
 
+        private void RunSchedulerLoop(CancellationToken token)
+        {
+            var pollInterval = TimeSpan.FromSeconds(30); // Can be config-driven
+
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    foreach (var jobConfig in _jobs)
+                    {
+                        if (!jobConfig.TaskActive || jobConfig.NextRunTime > DateTime.Now)
+                        {
+                            Console.WriteLine($"[SchedulerPlugin] Job '{jobConfig.TaskName}' not due yet or inactive.");
+                            continue;
+                        }
+
+                        Console.WriteLine($"[SchedulerPlugin] Creating DI scope for job: {jobConfig.TaskName}");
+
+                        using var scope = PluginContracts.ServiceActivator.ServiceProvider?.CreateScope();
+                        var serviceProvider = scope.ServiceProvider;
+
+                        var jobType = AppDomain.CurrentDomain.GetAssemblies()
+                            .SelectMany(a => a.GetTypes())
+                            .FirstOrDefault(t =>
+                                typeof(ISchedulerJob).IsAssignableFrom(t) &&
+                                !t.IsAbstract &&
+                                Activator.CreateInstance(t) is ISchedulerJob instance &&
+                                instance.JobName.Equals(jobConfig.TaskName, StringComparison.OrdinalIgnoreCase));
+
+                        if (jobType == null)
+                        {
+                            Console.WriteLine($"[SchedulerPlugin] No job class found matching: {jobConfig.TaskName}");
+                            continue;
+                        }
+
+                        if (Activator.CreateInstance(jobType) is ISchedulerJob jobInstance)
+                        {
+                            Console.WriteLine($"[SchedulerPlugin] Executing job: {jobInstance.JobName}");
+
+                            var result = new SchedulerJobExecutionResult
+                            {
+                                TaskID = jobConfig.TaskID,
+                                LastRunTime = DateTime.Now,
+                                NextRunTime = DateTime.Now.AddMinutes(jobConfig.FrequencyMinutes),
+                                Status = "Success"
+                            };
+
+                            try
+                            {
+                                jobInstance.ExecuteAsync(scope.ServiceProvider, token).GetAwaiter().GetResult();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[SchedulerPlugin] Job {jobInstance.JobName} failed: {ex.Message}");
+                                result.Status = "Failed";
+                            }
+
+                            try
+                            {
+                                var reporter = serviceProvider.GetRequiredService<ISchedulerResultReporter>();
+                                reporter.ReportJobResultAsync(result, token).GetAwaiter().GetResult();
+                                jobConfig.NextRunTime = result.NextRunTime; // update in memory
+
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[SchedulerPlugin] Failed to report result for job {jobInstance.JobName}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SchedulerPlugin] Error in scheduler loop: {ex.Message}");
+                }
+
+                Thread.Sleep(pollInterval);
+            }
+
+            Console.WriteLine("[SchedulerPlugin] Scheduler loop exited.");
+        }
+
+
+
+
+
+        public Task ExecuteAsync(CancellationToken token)
+        {
+            // This scheduler runs on its own thread, so this method is intentionally a no-op.
+            return Task.CompletedTask;
+        }
+
+
+    }
 }

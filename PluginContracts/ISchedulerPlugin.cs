@@ -1,26 +1,30 @@
 ﻿namespace PluginContracts
 {
+    /// <summary>
+    /// Interface for scheduler plugins that manage and execute scheduled jobs on their own internal loop.
+    /// </summary>
     public interface ISchedulerPlugin : IPlugin
     {
         /// <summary>
-        /// Starts the scheduler loop or timer.
+        /// Starts the scheduler plugin. Typically creates an internal thread or loop to monitor and run jobs.
         /// </summary>
         void Start();
 
         /// <summary>
-        /// Executes scheduled jobs manually (e.g. for testing or boot-time kickstart).
+        /// Stops the scheduler plugin loop gracefully.
         /// </summary>
-        Task RunScheduledJobsAsync(CancellationToken token);
+        void Stop();
 
         /// <summary>
-        /// Provides the scheduler plugin with its assigned jobs.
+        /// Provides the scheduler plugin with a list of configured jobs from the database.
         /// </summary>
+        /// <param name="jobs">A collection of scheduler job configuration entries.</param>
         void SetJobs(IEnumerable<SchedulerJobConfig> jobs);
 
         /// <summary>
-        /// Sets the result reporter used to return job results.
+        /// Provides the result reporter implementation used for persisting job execution results.
         /// </summary>
+        /// <param name="reporter">An implementation of ISchedulerResultReporter.</param>
         void SetResultReporter(ISchedulerResultReporter reporter);
     }
-
 }

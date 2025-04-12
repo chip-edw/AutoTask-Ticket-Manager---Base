@@ -63,6 +63,8 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<TicketHandler>();
                 builder.Services.AddSingleton<PluginManager>();
                 builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
+                builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
+
 
 
                 //Register Scoped services
@@ -95,6 +97,10 @@ namespace AutoTaskTicketManager_Base
 
                 // Build and run the application
                 var app = builder.Build();
+
+                //Enable plugins to resolve scoped services
+                PluginContracts.ServiceActivator.ServiceProvider = app.Services;
+
 
                 // Create a scope to access scoped services
                 using (var scope = app.Services.CreateScope())

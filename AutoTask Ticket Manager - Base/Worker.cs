@@ -1,7 +1,6 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
-using AutoTaskTicketManager_Base.Scheduler;
 using AutoTaskTicketManager_Base.Services;
 using PluginContracts;
 using Serilog;
@@ -138,30 +137,38 @@ namespace AutoTaskTicketManager_Base
             //AutotaskAPIGet.GetAutoTaskActiveResources();
 
 
+            //####################### WE INITIALIZE THE LOADED PLUGINS HERE ##########################
+            // ################ Loading Plugins. Need to load before the scope is created
+            _pluginManager.LoadPlugins();
+
+            //########################################################################################
+
+
+
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+                //Critical Config needing dbContext
                 StartupConfiguration.LoadSupportDistros(dbContext);
                 StartupConfiguration.LoadAutoAssignCompanies(dbContext);
                 StartupConfiguration.LoadAutoAssignSenders(dbContext);
 
-                var schedulerJobsInner = dbContext.Schedulers
-                    .Where(j => j.TaskActive)
-                    .Select(j => new SchedulerJobConfig
-                    {
-                        TaskID = j.TaskID,
-                        TaskName = j.TaskName,
-                        FrequencyMinutes = j.FrequencyMinutes,
-                        TaskActive = j.TaskActive,
-                        NextRunTime = j.NextRunTime
-                    })
-                    .ToList();
+                // Load scheduled jobs safely through scoped loader
+                var jobLoader = scope.ServiceProvider.GetRequiredService<ISchedulerJobLoader>();
+                var jobs = await jobLoader.LoadJobsAsync(cancellationToken);
 
-                var resultReporter = new SchedulerResultReporter(dbContext);
-                _pluginManager.AssignSchedulerJobs(schedulerJobsInner, resultReporter);
+                var resultReporter = scope.ServiceProvider.GetRequiredService<ISchedulerResultReporter>();
+                var jobInstances = _pluginManager.Jobs;
+
+                foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
+                {
+                    plugin.SetJobs(jobs);
+                    plugin.SetResultReporter(resultReporter);
+                    plugin.Start();  // This spins up the scheduler thread
+                }
+
             }
-
 
 
             //Get Assembly Version
@@ -180,14 +187,6 @@ namespace AutoTaskTicketManager_Base
             _logger.Information("\r\n\r\n");
 
 
-
-            // ########################## Loading Plugins and setting up the scheduler Jobs ##########################
-
-            Log.Information("Starting Plugin Loading...");
-
-
-            // 1. Loading the Plugins before the background Loop of the Worker Service starts.
-            _pluginManager.LoadPlugins();
 
         }
 
@@ -235,27 +234,7 @@ namespace AutoTaskTicketManager_Base
             }
 
 
-            //####################### WE INITIALIZE THE LOADED PLUGINS HERE ##########################
-            //  All App dependancies and supporting services should have been loaded or initialized
 
-            #region Scheduler Plugin initialization
-            using (var scope = _serviceScopeFactory.CreateScope())
-            {
-                var jobLoader = scope.ServiceProvider.GetRequiredService<ISchedulerJobLoader>();
-                var jobs = await jobLoader.LoadJobsAsync(cancellationToken);
-
-                foreach (var plugin in _pluginManager.Plugins.OfType<ISchedulerPlugin>())
-                {
-                    plugin.SetJobs(jobs);
-                    plugin.SetResultReporter(_resultReporter);
-                    plugin.Start();
-                }
-            }
-
-            #endregion
-
-
-            //########################################################################################
 
 
             while (!cancellationToken.IsCancellationRequested && !cancelTokenIssued)
@@ -265,12 +244,18 @@ namespace AutoTaskTicketManager_Base
 
                     if (Authenticate.GetExpiresOn() > DateTime.UtcNow)
                     {
-
+                        // just to give some visual indication on the console that the roop is still running
                         Console.WriteLine("");
 
                         //Looping and loading each plugin before we start processing.
                         foreach (var plugin in _pluginManager.Plugins)
                         {
+                            if (plugin is ISchedulerPlugin)
+                            {
+                                // Scheduler plugin runs independently and manages its own loop
+                                continue;
+                            }
+
                             await plugin.ExecuteAsync(cancellationToken);
                         }
 
