@@ -45,6 +45,10 @@ namespace AutoTaskTicketManager_Base
         //Used to compare to the subjects of inbound e-mails to prevent creation of duplicate tickets
         public static Dictionary<string, string> companiesTicketsNotCompleted = new Dictionary<string, string>();
 
+        //Dictionary holds Autotask Resources that are Active
+        //ResourceID as Key (firstName, email) as Value in an Object.
+        public static Dictionary<Int64, object[]> autoTaskResources = new Dictionary<Int64, object[]>();
+
 
         #endregion
 
@@ -206,11 +210,22 @@ namespace AutoTaskTicketManager_Base
             }
         }
 
-
         public static string GetConfig(string Tkey)
         {
-            return protectedSettings[Tkey];
+            if (protectedSettings.TryGetValue(Tkey, out string value))
+            {
+                return value;
+            }
+
+            string message = $"[StartupConfiguration] MISSING CONFIG KEY: '{Tkey}' — this is required and the app will now shut down.";
+            Log.Fatal(message);
+
+            Environment.FailFast(message);  // Immediately terminates the process the application and any threads such as Schedulers
+
+            return null!;
         }
+
+
 
         public static void LoadAutoAssignSenders(ApplicationDbContext dbContext)
         {

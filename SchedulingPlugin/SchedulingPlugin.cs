@@ -56,10 +56,12 @@ namespace SchedulingPlugin
                         if (!jobConfig.TaskActive || jobConfig.NextRunTime > DateTime.Now)
                         {
                             Log.Verbose($"[SchedulerPlugin] Job '{jobConfig.TaskName}' not due yet or inactive.");
+                            Console.WriteLine($"[SchedulerPlugin] Job '{jobConfig.TaskName}' not due yet or inactive.");
                             continue;
                         }
 
                         Log.Verbose($"[SchedulerPlugin] Creating DI scope for job: {jobConfig.TaskName}");
+                        Console.WriteLine($"[SchedulerPlugin] Creating DI scope for job: {jobConfig.TaskName}");
 
                         using var scope = PluginContracts.ServiceActivator.ServiceProvider?.CreateScope();
                         var serviceProvider = scope.ServiceProvider;
@@ -74,7 +76,7 @@ namespace SchedulingPlugin
 
                         if (jobType == null)
                         {
-                            Log.Verbose($"[SchedulerPlugin] No job class found matching: {jobConfig.TaskName}");
+                            Log.Debug($"[SchedulerPlugin] No job class found matching: {jobConfig.TaskName}");
                             continue;
                         }
 

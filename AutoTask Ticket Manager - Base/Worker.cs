@@ -102,39 +102,17 @@ namespace AutoTaskTicketManager_Base
 
 
 
-            //Loads the supportDistros Dictionary       
-            //StartupConfiguration.LoadSupportDistros(_dbOptions);
-
             //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
             await _autotaskAPIGet.PicklistInformation(_picklistService);
 
-
             ////Loads all active Autotask Companies from the AutoTask API into Companies.companies Dictionary
-            //AutotaskAPIGet.GetAutoTaskCompanies();
+            AutotaskAPIGet.GetAutoTaskCompanies();
 
-            ////Loads all the SubjectExclusionKeyWords from the Database
-            //StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL();
+            //Load Open tickets into Dictionary
+            AutotaskAPIGet.GetNotCompletedTickets();
 
-            ////Loads all the SenderExclusions from the Database
-            //StartupConfiguration.LoadSenderExclusionListFromSQL();
-
-            ////Compares the SQL DB with what was loaded into memory and if anything is missing in SQL it gets added
-            //StartupConfiguration.UpdateDataBaseWithMissingCompanies();
-
-            //Loads all the AT Companies into a Dictionary that have the auto assign flag set
-            //StartupConfiguration.LoadAutoAssignCompanies(_dbOptions);
-
-            ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
-            //StartupConfiguration.LoadAutoAssignMembers();
-
-            ////Dictionary that holds the Flintfox senders who should be directly assigned to any ticket they raise.
-            // StartupConfiguration.LoadAutoAssignSenders(_dbOptions);
-
-            ////Load open tickets into Dictionary
-            //AutotaskAPIGet.GetNotCompletedTickets();
-
-            ////Load Active AutoTask Resources into Dictionary
-            //AutotaskAPIGet.GetAutoTaskActiveResources();
+            //Load Active AutoTask Resources into Dictionary
+            AutotaskAPIGet.GetAutoTaskActiveResources();
 
 
             //####################### WE INITIALIZE THE LOADED PLUGINS HERE ##########################
@@ -153,6 +131,24 @@ namespace AutoTaskTicketManager_Base
                 StartupConfiguration.LoadSupportDistros(dbContext);
                 StartupConfiguration.LoadAutoAssignCompanies(dbContext);
                 StartupConfiguration.LoadAutoAssignSenders(dbContext);
+
+                ////Loads all the SubjectExclusionKeyWords from the Database
+                //StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL();
+
+                ////Loads all the SenderExclusions from the Database
+                //StartupConfiguration.LoadSenderExclusionListFromSQL();
+
+                ////Compares the SQL DB with what was loaded into memory and if anything is missing in SQL it gets added
+                //StartupConfiguration.UpdateDataBaseWithMissingCompanies();
+
+                ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
+                //StartupConfiguration.LoadAutoAssignMembers();
+
+                ////Dictionary that holds the Flintfox senders who should be directly assigned to any ticket they raise.
+                // StartupConfiguration.LoadAutoAssignSenders(_dbOptions);
+
+                ////Loads all the AT Companies into a Dictionary that have the auto assign flag set
+                //StartupConfiguration.LoadAutoAssignCompanies(dbContext);
 
                 // Load scheduled jobs safely through scoped loader
                 var jobLoader = scope.ServiceProvider.GetRequiredService<ISchedulerJobLoader>();
@@ -215,15 +211,15 @@ namespace AutoTaskTicketManager_Base
 
                 //Send a test e-mail message using the refactored ProtectedApiCallHelper Class
 
-                string subject = "ATTMS Worker Started Successfully";
-                string body = $"The ATTMS Worker has started. at {System.DateTime.Now}";
+                string subject = $"ATTMS Worker Started Successfully - {System.DateTime.Now}";
+                string body = $"The ATTMS Worker has started at {System.DateTime.Now}";
                 string adminEmail = "chip.edw@gmail.com";
                 string url = "https://graph.microsoft.com/v1.0/users/attms@v7n2m.onmicrosoft.com/sendMail";
 
                 //Comment or uncomment following line based on if you want an e-mail sent in startup
                 //Later put config in Appsettings.json to control this
 
-                //await _emailApiHelper.SendEmailAsync(url, accessToken, subject, body, adminEmail);
+                await _emailApiHelper.SendEmailAsync(url, accessToken, subject, body, adminEmail);
 
             }
             catch (Exception ex)
