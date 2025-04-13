@@ -1,4 +1,5 @@
 ﻿using PluginContracts;
+using Serilog;
 using System.Runtime.Loader;
 
 namespace AutoTaskTicketManager_Base.Services
@@ -11,16 +12,16 @@ namespace AutoTaskTicketManager_Base.Services
         // This will hold all ISchedulerJob implementations discovered in plugin DLLs.
         public List<ISchedulerJob> Jobs { get; } = new List<ISchedulerJob>();
 
-        private readonly ILogger<PluginManager> _logger;
+        //private readonly ILogger<PluginManager> _logger;
         private readonly List<IPlugin> _plugins = new();
 
         // Legacy plugin list exposed as read-only
         public IReadOnlyList<IPlugin> Plugins => _plugins.AsReadOnly();
 
-        public PluginManager(ILogger<PluginManager> logger)
-        {
-            _logger = logger;
-        }
+        //public PluginManager(ILogger<PluginManager> logger)
+        //{
+        //    _logger = logger;
+        //}
 
         public void LoadPlugins()
         {
@@ -32,7 +33,7 @@ namespace AutoTaskTicketManager_Base.Services
             if (!Directory.Exists(_pluginPath))
             {
                 Directory.CreateDirectory(_pluginPath);
-                _logger.LogWarning("Plugin directory did not exist, so it was created: {PluginPath}", _pluginPath);
+                Log.Warning("Plugin directory did not exist, so it was created: {PluginPath}", _pluginPath);
             }
 
             var dllFiles = Directory.GetFiles(_pluginPath, "*.dll");
@@ -41,16 +42,16 @@ namespace AutoTaskTicketManager_Base.Services
             {
                 try
                 {
-                    _logger.LogInformation("Attempting to load plugin from {DllPath}", dll);
+                    Log.Information("Attempting to load plugin from {DllPath}", dll);
 
                     var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(dll);
 
                     // Enumerate all types for debugging purposes:
                     var allTypes = assembly.GetTypes();
-                    _logger.LogInformation("Enumerating {Count} types in assembly: {DllPath}", allTypes.Length, dll);
+                    Log.Information("Enumerating {Count} types in assembly: {DllPath}", allTypes.Length, dll);
                     foreach (var type in allTypes)
                     {
-                        _logger.LogInformation(" - Found type: {FullName}", type.FullName);
+                        Log.Information(" - Found type: {FullName}", type.FullName);
                     }
 
                     // Legacy: Load plugins that implement IPlugin
@@ -61,12 +62,12 @@ namespace AutoTaskTicketManager_Base.Services
                         if (Activator.CreateInstance(type) is IPlugin plugin)
                         {
                             _plugins.Add(plugin);
-                            _logger.LogInformation("Successfully loaded plugin: {PluginName}", plugin.Name);
+                            Log.Information("Successfully loaded plugin: {PluginName}", plugin.Name);
                         }
                     }
                     if (!pluginTypes.Any())
                     {
-                        _logger.LogWarning("No valid IPlugin types found in {DllPath}", dll);
+                        Log.Warning("No valid IPlugin types found in {DllPath}", dll);
                     }
 
                     // NEW: Discover ISchedulerJob implementations from the same assembly
@@ -76,41 +77,41 @@ namespace AutoTaskTicketManager_Base.Services
                             typeof(ISchedulerJob).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
                             .ToList();
 
-                        _logger.LogInformation("Found {Count} ISchedulerJob candidate(s) in {DllPath}", schedulerJobTypes.Count, dll);
+                        Log.Information("Found {Count} ISchedulerJob candidate(s) in {DllPath}", schedulerJobTypes.Count, dll);
                         foreach (var jobType in schedulerJobTypes)
                         {
                             try
                             {
-                                _logger.LogInformation("Attempting to create instance of: {Type}", jobType.FullName);
+                                Log.Information("Attempting to create instance of: {Type}", jobType.FullName);
 
                                 if (Activator.CreateInstance(jobType) is ISchedulerJob job)
                                 {
                                     Jobs.Add(job);
-                                    _logger.LogInformation("OK Discovered scheduler job: {JobName}", job.JobName);
+                                    Log.Information("OK Discovered scheduler job: {JobName}", job.JobName);
                                 }
                                 else
                                 {
-                                    _logger.LogWarning("Failed Could not cast {Type} to ISchedulerJob", jobType.FullName);
+                                    Log.Warning("Failed Could not cast {Type} to ISchedulerJob", jobType.FullName);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogError(ex, "Failed to instantiate ISchedulerJob from type: {Type}", jobType.FullName);
+                                Log.Error(ex, "Failed to instantiate ISchedulerJob from type: {Type}", jobType.FullName);
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to discover ISchedulerJob implementations in {DllPath}", dll);
+                        Log.Error(ex, "Failed to discover ISchedulerJob implementations in {DllPath}", dll);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to load plugin from {DllPath}", dll);
+                    Log.Error(ex, "Failed to load plugin from {DllPath}", dll);
                 }
             }
 
-            _logger.LogInformation($"Plugin load complete. Total plugins loaded: {_plugins.Count}, Total scheduler jobs loaded: {Jobs.Count}");
+            Log.Information($"Plugin load complete. Total plugins loaded: {_plugins.Count}, Total scheduler jobs loaded: {Jobs.Count}");
         }
 
         // Legacy method for assigning scheduler jobs (if any plugins implement ISchedulerPlugin).
@@ -126,7 +127,7 @@ namespace AutoTaskTicketManager_Base.Services
                 plugin.SetJobs(pluginJobs);
                 plugin.SetResultReporter(reporter);
 
-                _logger.LogInformation("Assigned {Count} jobs to plugin {PluginName}", pluginJobs.Count, plugin.Name);
+                Log.Information("Assigned {Count} jobs to plugin {PluginName}", pluginJobs.Count, plugin.Name);
             }
         }
     }

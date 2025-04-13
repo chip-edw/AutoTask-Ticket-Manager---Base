@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using PluginContracts;
+using Serilog;
 
 
 
@@ -54,11 +55,11 @@ namespace SchedulingPlugin
                     {
                         if (!jobConfig.TaskActive || jobConfig.NextRunTime > DateTime.Now)
                         {
-                            Console.WriteLine($"[SchedulerPlugin] Job '{jobConfig.TaskName}' not due yet or inactive.");
+                            Log.Verbose($"[SchedulerPlugin] Job '{jobConfig.TaskName}' not due yet or inactive.");
                             continue;
                         }
 
-                        Console.WriteLine($"[SchedulerPlugin] Creating DI scope for job: {jobConfig.TaskName}");
+                        Log.Verbose($"[SchedulerPlugin] Creating DI scope for job: {jobConfig.TaskName}");
 
                         using var scope = PluginContracts.ServiceActivator.ServiceProvider?.CreateScope();
                         var serviceProvider = scope.ServiceProvider;
@@ -73,13 +74,13 @@ namespace SchedulingPlugin
 
                         if (jobType == null)
                         {
-                            Console.WriteLine($"[SchedulerPlugin] No job class found matching: {jobConfig.TaskName}");
+                            Log.Verbose($"[SchedulerPlugin] No job class found matching: {jobConfig.TaskName}");
                             continue;
                         }
 
                         if (Activator.CreateInstance(jobType) is ISchedulerJob jobInstance)
                         {
-                            Console.WriteLine($"[SchedulerPlugin] Executing job: {jobInstance.JobName}");
+                            Log.Debug($"[SchedulerPlugin] Executing job: {jobInstance.JobName}");
 
                             var result = new SchedulerJobExecutionResult
                             {
@@ -95,7 +96,7 @@ namespace SchedulingPlugin
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"[SchedulerPlugin] Job {jobInstance.JobName} failed: {ex.Message}");
+                                Log.Warning($"[SchedulerPlugin] Job {jobInstance.JobName} failed: {ex.Message}");
                                 result.Status = "Failed";
                             }
 
@@ -108,20 +109,20 @@ namespace SchedulingPlugin
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"[SchedulerPlugin] Failed to report result for job {jobInstance.JobName}: {ex.Message}");
+                                Log.Warning($"[SchedulerPlugin] Failed to report result for job {jobInstance.JobName}: {ex.Message}");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[SchedulerPlugin] Error in scheduler loop: {ex.Message}");
+                    Log.Warning($"[SchedulerPlugin] Error in scheduler loop: {ex.Message}");
                 }
 
                 Thread.Sleep(pollInterval);
             }
 
-            Console.WriteLine("[SchedulerPlugin] Scheduler loop exited.");
+            Log.Debug("[SchedulerPlugin] Scheduler loop exited.");
         }
 
 

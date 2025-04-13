@@ -1,23 +1,23 @@
 ﻿using AutoTaskTicketManager_Base.Models;
 using Microsoft.EntityFrameworkCore;
 using PluginContracts;
+using Serilog;
 
 namespace AutoTaskTicketManager_Base.Scheduler
 {
     public class SchedulerJobLoader : ISchedulerJobLoader
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly ILogger<SchedulerJobLoader> _logger;
 
-        public SchedulerJobLoader(ApplicationDbContext dbContext, ILogger<SchedulerJobLoader> logger)
+        public SchedulerJobLoader(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
-            _logger = logger;
+
         }
 
         public async Task<IEnumerable<SchedulerJobConfig>> LoadJobsAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Loading active scheduler jobs from the database...");
+            Log.Information("Loading active scheduler jobs from the database...");
 
             return await _dbContext.Schedulers
                 .Where(s => s.TaskActive)
