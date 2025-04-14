@@ -81,7 +81,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         {
             try
             {
+                Log.Debug("Calling MSAL to AcquireTokenForClient...");
+
                 AuthenticationResult result = await _app.AcquireTokenForClient(_scopes).ExecuteAsync();
+
+                Log.Debug("MSAL token acquired successfully.");
 
                 string accessToken = result.AccessToken;
 
@@ -96,12 +100,12 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             }
             catch (MsalException msalEx)
             {
-                Log.Error($"MSAL exception occurred: {msalEx.Message}");
+                _logger.Error(msalEx, $"MSAL exception occurred: {msalEx.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                Log.Error($"Unexpected exception occurred: {ex.Message}");
+                _logger.Error(ex, $"Unexpected exception occurred: {ex.Message}");
                 throw;
             }
         }

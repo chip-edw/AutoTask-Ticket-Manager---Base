@@ -8,6 +8,7 @@ namespace AutoTaskTicketManager_Base
 {
     public static class StartupConfiguration
     {
+
         #region "Dictionaries and Lists"
         //Dictionary holds all protected app configs loaded from SQLite DB or in future azure vault.
         public static Dictionary<string, string> protectedSettings = new Dictionary<string, string>();
@@ -43,6 +44,10 @@ namespace AutoTaskTicketManager_Base
         //Dictionary holds all the AT Ticket numbers and Ticket Titles not in a completed state.
         //Used to compare to the subjects of inbound e-mails to prevent creation of duplicate tickets
         public static Dictionary<string, string> companiesTicketsNotCompleted = new Dictionary<string, string>();
+
+        //Dictionary holds Autotask Resources that are Active
+        //ResourceID as Key (firstName, email) as Value in an Object.
+        public static Dictionary<Int64, object[]> autoTaskResources = new Dictionary<Int64, object[]>();
 
 
         #endregion
@@ -100,23 +105,23 @@ namespace AutoTaskTicketManager_Base
             return autoAssignSenders[Tkey];
         }
 
-
-        public static bool LoadProtectedSettings()
+        public static bool LoadProtectedSettings(ApplicationDbContext dbContext)
         {
             Log.Debug("Loading Protected Settings Method Fired from StartupConfiguration");
             Log.Debug("Clearing Dictionary");
+
             protectedSettings.Clear();
+
             try
             {
                 Log.Debug("Populating dictionary with Protected Settings Key, Value pairs");
-                using (var context = new ApplicationDbContext())
+
+                foreach (var setting in dbContext.ConfigStore)
                 {
-                    foreach (var setting in context.ConfigStore)
-                    {
-                        protectedSettings.Add(setting.ValueName, setting.Value);
-                    }
+                    protectedSettings[setting.ValueName] = setting.Value;
                 }
 
+                Log.Debug($"Protected Settings loaded. Count: {protectedSettings.Count}");
                 return true;
             }
             catch (SqliteException ex)
@@ -124,8 +129,8 @@ namespace AutoTaskTicketManager_Base
                 Log.Error("{0} Unable to read from database: {1}", nameof(LoadProtectedSettings), ex);
                 return false;
             }
-
         }
+
 
         public static void LoadMsGraphConfig()
         {
@@ -141,7 +146,8 @@ namespace AutoTaskTicketManager_Base
                     Log.Error($"StartupConfiguration Error loading graphConfigs dictionary  {ex}");
                 }
 
-            };
+            }
+            ;
             Log.Debug("MS Graph Configs Loaded\n");
         }
 
@@ -155,20 +161,19 @@ namespace AutoTaskTicketManager_Base
         /// Loads the Active Support e-mail distros into the dictionary named "supportDistros"
         /// </summary>
         /// <returns></returns>
-        public static bool LoadSupportDistros()
+        public static bool LoadSupportDistros(ApplicationDbContext dbContext)
         {
             //###############     Load active Support Distros from SQL DB   ###############
             try
             {
-                using (var context = new ApplicationDbContext())
-                {
-                    var filteredSettings = context.CustomerSettings
-                        .Where(setting => setting.EnableEmail == true && !string.IsNullOrEmpty(setting.SupportEmail) && setting.SupportEmail.Length > 5);
+                var filteredSettings = dbContext.CustomerSettings
+                    .Where(setting => setting.EnableEmail == true &&
+                                      !string.IsNullOrEmpty(setting.SupportEmail) &&
+                                      setting.SupportEmail.Length > 5);
 
-                    foreach (var setting in filteredSettings)
-                    {
-                        supportDistros[setting.SupportEmail] = setting.AutotaskId;
-                    }
+                foreach (var setting in filteredSettings)
+                {
+                    supportDistros[setting.SupportEmail] = setting.AutotaskId;
                 }
 
                 Log.Debug($"Support Distros Loaded. Count: {supportDistros.Count()}\n");
@@ -179,78 +184,81 @@ namespace AutoTaskTicketManager_Base
                 Log.Error("{0} Unable to read from database: {1}", nameof(LoadSupportDistros), ex);
                 return false;
             }
-
         }
 
-        public static void LoadAutoAssignCompanies()
+
+        public static void LoadAutoAssignCompanies(ApplicationDbContext dbContext)
         {
             try
             {
-                using (var context = new ApplicationDbContext())
+                // Flush in-memory Company list before repopulating
+                autoAssignCompanies.Clear();
+
+                var filteredSettings = dbContext.CustomerSettings
+                    .Where(setting => setting.AutoAssign == true);
+
+                foreach (var setting in filteredSettings)
                 {
-                    // Flush In Memory Company list so we can repopulate
-                    autoAssignCompanies.Clear();
-
-                    var filteredSettings = context.CustomerSettings
-                        .Where(setting => setting.AutoAssign == true);
-
-                    foreach (var setting in filteredSettings)
-                    {
-                        autoAssignCompanies[setting.AutotaskId] = setting.AutoAssign;
-                    }
+                    autoAssignCompanies[setting.AutotaskId] = setting.AutoAssign;
                 }
 
-                Log.Debug($"Auto Assign Companies loaded. Count: {autoAssignCompanies.Count()}\n");
-
+                Log.Debug($"Auto Assign Companies loaded. Count: {autoAssignCompanies.Count}\n");
             }
             catch (SqliteException ex)
             {
-                Log.Error("{0} Unable to read from database: {1}", nameof(LoadSupportDistros), ex);
-
+                Log.Error("{0} Unable to read from database: {1}", nameof(LoadAutoAssignCompanies), ex);
             }
-
         }
 
         public static string GetConfig(string Tkey)
         {
-            return protectedSettings[Tkey];
+            if (protectedSettings.TryGetValue(Tkey, out string value))
+            {
+                return value;
+            }
+
+            string message = $"[StartupConfiguration] MISSING CONFIG KEY: '{Tkey}' — this is required and the app will now shut down.";
+            Log.Fatal(message);
+
+            Environment.FailFast(message);  // Immediately terminates the process the application and any threads such as Schedulers
+
+            return null!;
         }
 
-        public static void LoadAutoAssignSenders()
+
+
+        public static void LoadAutoAssignSenders(ApplicationDbContext dbContext)
         {
             try
             {
-                using (var context = new ApplicationDbContext())
+                var senderAssignments = dbContext.SenderAssignments.ToList();
+
+                if (autoAssignSenders.Count > 0)
                 {
-                    var senderAssignments = context.SenderAssignments.ToList();
-
-                    if (autoAssignSenders.Count > 0)
-                    {
-                        autoAssignSenders.Clear();
-                    }
-
-                    foreach (var assignment in senderAssignments)
-                    {
-                        // Use Property names from SenderAssignments model
-                        string resourceId = assignment.AT_Resource_Id;
-                        string resourceName = assignment.Resource_Name;
-                        string resourceEmail = assignment.Resource_Email;
-                        string resourceRole = assignment.Resource_Role;
-                        bool resourceActive = assignment.Resource_Active;
-
-                        // Add to dictionary
-                        autoAssignSenders.Add(resourceId, new object[] {
-                    resourceName, resourceEmail, resourceRole, resourceActive
-                });
-                    }
+                    autoAssignSenders.Clear();
                 }
-                Log.Debug($"Sender Assign Members loaded. Count: {autoAssignMembers.Count()}\n");
+
+                foreach (var assignment in senderAssignments)
+                {
+                    string resourceId = assignment.AT_Resource_Id;
+                    string resourceName = assignment.Resource_Name;
+                    string resourceEmail = assignment.Resource_Email;
+                    string resourceRole = assignment.Resource_Role;
+                    bool resourceActive = assignment.Resource_Active;
+
+                    autoAssignSenders.Add(resourceId, new object[] {
+                resourceName, resourceEmail, resourceRole, resourceActive
+            });
+                }
+
+                Log.Debug($"Sender Assign Members loaded. Count: {autoAssignSenders.Count}\n");
             }
             catch (Exception ex)
             {
                 Log.Error($"AppConfig.cs LoadAutoAssignSenders() encountered an error: {ex}");
             }
         }
+
 
         #endregion
     }

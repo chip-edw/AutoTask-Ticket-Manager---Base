@@ -55,9 +55,15 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
             HttpResponseMessage response = await _httpClient.SendAsync(request);
 
+
             if (!response.IsSuccessStatusCode)
             {
                 throw new InvalidOperationException($"Failed to send email: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+                Log.Warning($"Failed to send email: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+            }
+            else
+            {
+                Log.Information($"Administrative Email Sent - {subject}");
             }
         }
 

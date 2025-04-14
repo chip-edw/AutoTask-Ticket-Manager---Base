@@ -1,12 +1,16 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
+using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
+using AutoTaskTicketManager_Base.Scheduler;
 using AutoTaskTicketManager_Base.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using PluginContracts;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base
@@ -21,10 +25,6 @@ namespace AutoTaskTicketManager_Base
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
 
-            var httpClientFactory = new MsalHttpClientFactory(configuration);
-
-
-
             // Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)
@@ -35,26 +35,6 @@ namespace AutoTaskTicketManager_Base
 
             try
             {
-                Log.ForContext("SourceContext", "Microsoft.Hosting.Lifetime")
-                    .Information("Testing Microsoft.Hosting.Lifetime log capture.");
-
-                Log.Information($"Begining {nameof(StartupConfiguration)}\n");
-
-
-                //Loads all the Protected Application Settings from the SQLite Db into the Dictionary StartupConfiguration.AppSettings
-                //Must be loaded before the LoadMsGraphSettings as the MsGraph Settings are hear to start with and are just broken out for simplicity
-                StartupConfiguration.LoadProtectedSettings();
-                Log.Information($"{nameof(StartupConfiguration.LoadProtectedSettings)}");
-
-
-                //Loads the necessary values for the MS Graph API. Includes values nessary to retrieve the Bearer Access Token
-                //from the Azure Authentication Service
-                //Must be loaded before initializing the EmailManager as these settings are involved in the MSGraph authentication
-                StartupConfiguration.LoadMsGraphConfig();
-                Log.Information($"{nameof(StartupConfiguration.LoadMsGraphConfig)}");
-
-                EmailManager.Initialize(configuration, httpClientFactory);
-                Log.Information($"Email Manager {nameof(EmailManager.Initialize)}");
 
                 // Create the WebApplication builder
                 var builder = WebApplication.CreateBuilder(args);
@@ -75,20 +55,37 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<SecureEmailApiHelper>();
                 builder.Services.AddSingleton<ConfidentialClientApp>();
                 builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
-                builder.Services.AddTransient<EmailManager>();
+                builder.Services.AddScoped<EmailManager>();
                 builder.Services.AddSingleton<IApiClient, ApiClient>();
                 builder.Services.AddSingleton<IPicklistService, PicklistService>();
                 builder.Services.AddSingleton<AutotaskAPIGet>();
                 builder.Services.AddSingleton<AutoTaskResources>();
                 builder.Services.AddSingleton<TicketHandler>();
                 builder.Services.AddSingleton<PluginManager>();
+                builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
+                builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
+
+
+
+                //Register Scoped services
+                builder.Services.AddScoped<ISchedulerResultReporter>(provider =>
+                {
+                    var dbContext = provider.GetRequiredService<ApplicationDbContext>();
+                    return new SchedulerResultReporter(dbContext);
+                });
+
+
+                //Register ApplicationDbContext needed so we can create new DbContext instances to use across threads
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite("Data Source=ATTMS.db"));
 
 
 
                 //Register Worker
                 builder.Services.AddHttpClient<SecureEmailApiHelper>();
-                builder.Services.AddSingleton<IWorkerService, Worker>();
-                builder.Services.AddHostedService<Worker>();
+                builder.Services.AddScoped<IWorkerService, Worker>();
+                builder.Services.AddHostedService<ScopedWorkerHostedService>();
+
 
 
                 // Configure Kestrel for the internal maintenance API
@@ -100,6 +97,34 @@ namespace AutoTaskTicketManager_Base
 
                 // Build and run the application
                 var app = builder.Build();
+
+                //Enable plugins to resolve scoped services
+                PluginContracts.ServiceActivator.ServiceProvider = app.Services;
+
+
+                // Create a scope to access scoped services
+                using (var scope = app.Services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+                    Log.Information($"Beginning {nameof(StartupConfiguration)}\n");
+
+                    // Load settings using the scoped dbContext
+                    StartupConfiguration.LoadProtectedSettings(dbContext);
+                    Log.Information($"{nameof(StartupConfiguration.LoadProtectedSettings)}");
+
+
+                    //Loads the necessary values for the MS Graph API. Includes values nessary to retrieve the Bearer Access Token
+                    //from the Azure Authentication Service
+                    //Must be loaded before initializing the EmailManager as these settings are involved in the MSGraph authentication
+                    StartupConfiguration.LoadMsGraphConfig();
+                    Log.Information($"{nameof(StartupConfiguration.LoadMsGraphConfig)}");
+
+                    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                    var httpClientFactory = scope.ServiceProvider.GetRequiredService<IMsalHttpClientFactory>();
+                    EmailManager.Initialize(config, httpClientFactory);
+                    Log.Information($"Email Manager {nameof(EmailManager.Initialize)}");
+                }
 
                 // Map the maintenance API endpoints
                 ConfigureEndpoints(app, managementApiPort);
@@ -119,15 +144,16 @@ namespace AutoTaskTicketManager_Base
 
         private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
-            // Register the worker service
-            services.AddHostedService<Worker>();
-
-            // Register IConfiguration as a singleton for use throughout the application
+            //Register IConfiguration as singleton
             services.AddSingleton(configuration);
 
-            // Additional services can be registered here
+            //Register Worker as a scoped dependency
             services.AddScoped<IWorkerService, Worker>();
+
+            //Register the safe wrapper that uses a scoped Worker
+            services.AddHostedService<ScopedWorkerHostedService>();
         }
+
 
         private static void ConfigureEndpoints(WebApplication app, int managementApiPort)
         {

@@ -5,6 +5,7 @@ using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using Azure.Identity;
 using HtmlAgilityPack;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
@@ -27,13 +28,16 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         private readonly IConfiguration _configuration;
         private readonly TicketHandler _ticketHandler;
         private readonly AutoTaskResources _autoTaskResources;
+        private readonly DbContextOptions<ApplicationDbContext> _dbOptions;
 
-        public EmailManager(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, AutoTaskResources autoTaskResources, TicketHandler ticketHandler)
+        public EmailManager(SecureEmailApiHelper emailApiHelper, IConfiguration configuration, AutoTaskResources autoTaskResources,
+            TicketHandler ticketHandler, DbContextOptions<ApplicationDbContext> dbOptions)
         {
             _emailApiHelper = emailApiHelper ?? throw new ArgumentNullException(nameof(emailApiHelper));
             _autoTaskResources = autoTaskResources ?? throw new ArgumentNullException(nameof(autoTaskResources));
             _ticketHandler = ticketHandler ?? throw new ArgumentNullException(nameof(ticketHandler));
             _configuration = configuration;
+            _dbOptions = dbOptions;
         }
 
 
@@ -251,11 +255,11 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
         /// Allows you to see if the support distro is set and if the EnableEmail flag is set
         /// </summary>
         /// <returns>An Array of AutotaskId, AccountName, SupportEmail, EnableEmail</returns>
-        public static List<List<KeyValuePair<string, string>>> GetCustomerSettings(long id = -1)
+        public List<List<KeyValuePair<string, string>>> GetCustomerSettings(long id = -1)
         {
             var customers = new List<List<KeyValuePair<string, string>>>();
 
-            using (var context = new ApplicationDbContext()) // DbContext name from Models Class
+            using (var context = new ApplicationDbContext(_dbOptions)) // DbContext name from Models Class
             {
                 // Create a query to select the required fields from CustomerSettings
                 var query = context.CustomerSettings

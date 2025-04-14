@@ -4,8 +4,13 @@ using Serilog;
 
 namespace AutoTaskTicketManager_Base.Models
 {
-    internal class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : DbContext
     {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
         public DbSet<ConfigStore> ConfigStore { get; set; }
         public DbSet<CustomerSettings> CustomerSettings { get; set; }
         public DbSet<Scheduler> Schedulers { get; set; }
