@@ -1,5 +1,6 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
+using AutoTaskTicketManager_Base.Common.Secrets;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using AutoTaskTicketManager_Base.Scheduler;
@@ -51,6 +52,9 @@ namespace AutoTaskTicketManager_Base
                 // Register Services
                 ConfigureServices(builder.Services, builder.Configuration);
 
+                // Add Controllers (required for MapControllers to work)
+                builder.Services.AddControllers();
+
                 //Register Singletons
                 builder.Services.AddSingleton<SecureEmailApiHelper>();
                 builder.Services.AddSingleton<ConfidentialClientApp>();
@@ -64,6 +68,7 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<PluginManager>();
                 builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
                 builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
+                builder.Services.AddSingleton<ISecretsProvider, LocalSecretsProvider>();
 
 
 
@@ -157,6 +162,17 @@ namespace AutoTaskTicketManager_Base
 
         private static void ConfigureEndpoints(WebApplication app, int managementApiPort)
         {
+            // Protect /api/setup with localhost-only access
+            app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/setup"), setupApp =>
+            {
+                setupApp.UseMiddleware<AutoTaskTicketManager_Base.Common.Middleware.LocalhostOnlyMiddleware>();
+                setupApp.UseRouting();
+                setupApp.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                });
+            });
+
             // Expose a default endpoint for testing the API
             app.MapGet("/", (IServiceProvider services) =>
             {

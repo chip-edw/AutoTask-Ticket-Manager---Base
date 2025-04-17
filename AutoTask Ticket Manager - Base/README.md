@@ -6,7 +6,7 @@ AutoTask Ticket Manager Service (ATTMS) is a modular .NET 8 worker service desig
 
 ## 🚀 Overview
 
-This application is a complete refactor of a system currently used in production by an ISV company. The refactored version embraces modern .NET best practices with:
+This application is a complete refactor of a system I wrote currently used in production at an ISV. The refactored version embraces modern .NET best practices with:
 
 - **Scoped dependency injection**
 - **Multi-threaded background scheduling**
@@ -67,3 +67,22 @@ Settings are stored in a SQLite database (`ATTMS.db`) and loaded into memory usi
 
 ```csharp
 StartupConfiguration.GetProtectedSetting("ClientSecret");
+```
+---
+
+## 📅 Roadmap & To-Do
+
+Planned enhancements and upcoming features for ATTMS:
+
+- [ ] 🔐 Implement API Key or JWT-based authentication for internal maintenance API
+- [ ] 🌐 Add IP allowlisting or internal-only hosting for extra API security
+- [ ] 📁 Create structured endpoints for:
+  - [ ] `/api/scheduler/reload`
+  - [ ] `/api/email/check`
+  - [ ] `/api/config/update`
+  - [ ] `/api/status/health`
+- [ ] 💬 Integrate Microsoft Graph for Teams chat updates around ticket workflows
+- [ ] ✅ Add Graph API functionality for Tasks and To-Dos related to AutoTask tickets
+- [ ] 🖥️ Develop lightweight Windows Desktop Client to interact with internal API
+- [ ] 🔄 Use HttpClientFactory (and optionally Refit) for robust API client design in desktop app
+- [ ] 📦 Add versioning support to the API: `/api/v1/...`

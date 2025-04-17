@@ -1,0 +1,6 @@
+{
+  "UserA": "encryptedKeyForUserA",
+  "UserB": "encryptedKeyForUserB",
+  "UserC": "encryptedKeyForUserC"
+}
+
