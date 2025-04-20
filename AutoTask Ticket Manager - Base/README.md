@@ -1,88 +1,156 @@
-﻿# AutoTask Ticket Manager Service (ATTMS)
-
-AutoTask Ticket Manager Service (ATTMS) is a modular .NET 8 worker service designed to streamline support operations by integrating email, scheduling, and ticket lifecycle management for AutoTask PSA users.
+﻿# ATTMS: AutoTask Ticket Manager Service & Lightweight ITSM Platform
 
 ---
 
-## 🚀 Overview
+## 📚 Overview
 
-This application is a complete refactor of a system I wrote currently used in production at an ISV. The refactored version embraces modern .NET best practices with:
+**ATTMS** (AutoTask Ticket Manager Service) is an open-source platform designed to enhance the support and CRM workflows for AutoTask PSA users.
 
-- **Scoped dependency injection**
-- **Multi-threaded background scheduling**
-- **Plugin architecture for extensibility**
-- **Serilog-based structured logging**
-- **SQLite-backed persistence**
+**Originally developed as a self-taught C# project**, ATTMS was a completely new approach inspired by earlier work using a Microsoft Outlook VSTO plugin. It provided an opportunity to learn the Microsoft Graph API and develop a more scalable, service-based system for AutoTask integration.  
+Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**, building a solid, extensible foundation for ITSM and CRM workflows.
 
-It is being actively developed with the goal of becoming an open-source tool, enabling others to extend functionality by writing plugins without altering base code.
+**ATTMS is cross-platform**, running on both Windows and Linux environments.
 
 ---
 
-## 🔧 Core Features
+## 🚀 Core Objectives
+
+- Provide a **modern lightweight desktop and web client** for managing AutoTask tickets, customers, and opportunities.
+- Solve **AutoTask CRM limitations** through a clean, customizable presentation layer.
+- Leverage existing **Microsoft 365 investments** (Teams, Planner, Outlook) for internal collaboration and notifications.
+- **Minimize storage** overhead by using AutoTask and Microsoft 365 as primary systems of record.
+- Build a **plugin-extensible**, **cross-platform** ITSM enhancement solution.
+
+---
+
+## 🔧 Core Components
+
+### ✅ Worker Service Foundation
+
+- Built on **.NET 8** with **Scoped Dependency Injection** throughout.
+- **Modular Plugin Architecture** allowing runtime extensibility:
+  - Plugins can be dropped into a designated folder and dynamically loaded.
+  - Scheduler plugin manages background jobs independently from the core service.
+- **Multi-threaded Background Scheduling**:
+  - Jobs inherit from `ISchedulerJob`.
+  - Jobs execute based on individual schedules stored in SQLite.
+- **Structured Logging** using Serilog:
+  - Detailed operational logging for visibility and diagnostics.
 
 ### ✅ Email-to-Ticket Automation
 
-- Integrates with Microsoft 365 using the **Microsoft Graph API**
-- Parses inbound emails to create/update tickets in AutoTask
-- Handles automatic assignment rules and sender exclusions
-- Built on a registered Azure App with secure token acquisition
-- Configurable using the `StartupConfiguration` dictionary
+- Integrates with Microsoft 365 using the **Microsoft Graph API**.
+- Parses inbound emails to create/update AutoTask tickets.
+- Applies sender exclusions and automatic assignment rules.
+- Future planned integration with Teams, Planner, and Microsoft To-Do for ticket-based collaboration.
 
-### ⏲️ Background Scheduling
+### ✅ Ticket and Opportunity Management
 
-- Runs all scheduled jobs from a dedicated **Scheduler plugin**
-- Each job inherits from `ISchedulerJob` and defines its own execution logic
-- Supports run frequency and activation status per job
-- Jobs are defined in the database and dynamically executed using reflection
-- Plugin runs on an independent thread for separation of concerns
+- Full AutoTask API integration for Tickets, Companies, Contacts, and Opportunities.
+- Future enhancements will allow lightweight opportunity and CRM workflows on top of AutoTask data.
 
-### 🔌 Plugin Architecture
+### ✅ Internal API (Management API)
 
-- One core **scheduler plugin** currently enabled
-- Easily extended to support other plugin types in the future
-- Plugins are dropped into a designated folder and loaded dynamically at runtime
-- Uses `ServiceActivator.ServiceProvider` to resolve scoped dependencies
-
-### 📝 Ticket Management
-
-- Integrates with AutoTask APIs for querying, creating, and updating tickets
-- Scheduled jobs can load ticket data, assign technicians, and apply business logic
-- Maintains in-memory dictionaries for open tickets, companies, and exclusions
-
-### 📬 Email Integration (Microsoft Graph API)
-
-- Uses **Microsoft Graph API** to communicate securely with Exchange Online
-- Registered application in Azure where OAuth scopes and security are managed
-- Supports sending alert emails, parsing support inboxes, and scheduling enhancements
-- Paves the way for future Microsoft 365 integrations like:
-  - Microsoft Teams ticket notifications
-  - Tasks and To-Dos linked to AutoTask tickets
-  - Scheduled reminders and calendar syncing
+- Lightweight internal maintenance API secured by:
+  - API Key Authentication (with future Key Vault optionality)
+  - IP restrictions (localhost-only Setup APIs)
+- Exposes endpoints for Scheduler control, health checks, and ticket management.
+- Designed for safe automation and future desktop app integrations.
 
 ---
 
-## 🗂️ Configuration
+## 🗂️ Setup and Configuration
 
-Settings are stored in a SQLite database (`ATTMS.db`) and loaded into memory using `StartupConfiguration`. Sensitive settings like Graph API credentials are stored in a protected key-value store and accessed via:
+- **Persistence**: SQLite database (`ATTMS.db`) used for lightweight storage of schedules, config, and plugin metadata.
+- **Secrets Management**:
+  - Local `keys.json` for encrypted API keys during development.
+  - Future Azure Key Vault support planned for production environments.
+- **StartupConfiguration** Service:
+  - Centralized access for protected app settings.
+  - Example usage:
+    ```csharp
+    StartupConfiguration.GetProtectedSetting("ClientSecret");
+    ```
 
-```csharp
-StartupConfiguration.GetProtectedSetting("ClientSecret");
-```
 ---
 
-## 📅 Roadmap & To-Do
+## 📦 Storage Strategy
 
-Planned enhancements and upcoming features for ATTMS:
+| Data | Storage Location |
+|:-----|:-----------------|
+| Tickets, Contacts, Accounts | AutoTask PSA (via API) |
+| Emails, Tasks, Teams Chats | Microsoft 365 (via MS Graph) |
+| Configuration, Plugins, Schedules | Local SQLite Database |
+| Attachments (future optional) | Microsoft 365 OneDrive/SharePoint APIs |
 
-- [ ] 🔐 Implement API Key or JWT-based authentication for internal maintenance API
-- [ ] 🌐 Add IP allowlisting or internal-only hosting for extra API security
-- [ ] 📁 Create structured endpoints for:
+✅ ATTMS reduces infrastructure costs by **leveraging paid-for systems** instead of duplicating storage.
+
+---
+
+## 🌐 Cross-Platform Support
+
+- Windows and Linux deployment support
+- No Windows-specific services or hardcoded paths (uses `Path.Combine`, platform-agnostic APIs)
+- Designed to run on Docker containers, Azure App Services, or local VM installs
+- Certificates, file handling, and process management written to handle both OS families gracefully
+
+---
+
+## 🗺️ Roadmap
+
+### Phase 1: MVP Release (v0.1)
+
+- [x] Secure Setup API (localhost-only protection)
+- [x] Encrypted Key Generation and Secrets Management
+- [ ] Secure API Key Authentication Middleware
+- [ ] Ticket Listing and Basic Dashboard UI
+- [ ] Management API endpoints:
   - [ ] `/api/scheduler/reload`
   - [ ] `/api/email/check`
   - [ ] `/api/config/update`
   - [ ] `/api/status/health`
-- [ ] 💬 Integrate Microsoft Graph for Teams chat updates around ticket workflows
-- [ ] ✅ Add Graph API functionality for Tasks and To-Dos related to AutoTask tickets
-- [ ] 🖥️ Develop lightweight Windows Desktop Client to interact with internal API
-- [ ] 🔄 Use HttpClientFactory (and optionally Refit) for robust API client design in desktop app
-- [ ] 📦 Add versioning support to the API: `/api/v1/...`
+- [ ] Lightweight Windows Desktop Client (Phase 1 UI)
+
+### Phase 2: Beta Enhancements (v0.5)
+
+- Full Ticket Management interface (Create/Update/Assign)
+- Opportunity Dashboard (simplified CRM overlay)
+- Microsoft Teams Chat Updates for ticket changes
+- Microsoft Planner Task creation from AutoTask tickets
+- Optional PostgreSQL or Azure SQL backend support
+
+### Phase 3: Open Source Launch (v1.0+)
+
+- Publish Docker Images and install scripts
+- Optional Salesforce CRM basic integration
+- Public Contribution Guidelines and Plugin SDK
+- Cloud/SaaS self-hosted deployment instructions
+- Professional-grade API versioning (`/api/v1/...`)
+
+---
+
+## 📈 Future Vision
+
+**ATTMS** aims to become the go-to open-source bridge between  
+AutoTask PSA, Microsoft 365, and lightweight CRM/ITSM needs,  
+offering companies a flexible, low-cost enhancement to their existing systems.
+
+**Focus Areas:**
+
+- CRM Light Enhancements
+- Support Desk Streamlining
+- Cross-Platform Worker Service
+- Plugin Market Ecosystem
+
+---
+
+## 📜 License
+
+Planned for **MIT License** upon open-source release.  
+Commercial consulting, deployment, and plugin customization services may be available separately.
+
+---
+
+# 🚀 ATTMS — Modernize AutoTask Support and CRM Workflows
+
+> *"Because your ITSM platform should work for you, not the other way around."*
