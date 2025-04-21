@@ -1,12 +1,89 @@
-# React + Vite
+# ATTMS AdminUI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AdminUI is the lightweight, extensible front-end management portal for the AutoTask Ticket Manager Service (ATTMS) platform.
 
-Currently, two official plugins are available:
+Built using [React](https://react.dev/), [Vite](https://vitejs.dev/), and [Material-UI (MUI)](https://mui.com/), AdminUI provides a fast, simple, cross-platform interface to interact with ATTMS backend services.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## Expanding the ESLint configuration
+- ⚡ Powered by React 18 and Vite for lightning-fast development and builds
+- 🎨 Styled with Material-UI (MUI) components for a clean, professional look
+- 🔒 Basic simulated login system with protected routing
+- 📋 Pages for Dashboard, Ticket List, and CRM Account List
+- 🛠️ Planned integration with ATTMS Maintenance APIs and Worker Service APIs
+- 📦 Ready for static deployment and local download via ATTMS Maintenance API
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📂 Project Structure
+
+```plaintext
+AdminUI/
+├── public/
+├── src/
+│   ├── api/              # API services (auth, tickets, accounts)
+│   ├── assets/           # Static assets (e.g., logos)
+│   ├── components/       # Shared UI components (Sidebar, TopBar, PrivateRoute)
+│   ├── pages/            # Application pages (Dashboard, Tickets, Accounts, Login)
+│   ├── App.jsx           # Main app component with routes
+│   ├── main.jsx          # App entry point
+│   ├── App.css           # App-level styling
+│   └── index.css         # Global styles
+├── .vscode/              # VSCode workspace settings (optional but recommended)
+├── package.json
+├── vite.config.js
+└── README.md
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [VS Code](https://code.visualstudio.com/) with ESLint and Prettier extensions (recommended)
+
+### Install Dependencies
+
+```
+npm install
+```
+
+### Start Development Server
+
+```
+npm run dev
+```
+
+Visit: [http://localhost:5173](http://localhost:5173)
+
+### Build for Production
+
+```
+npm run build
+```
+
+The production-ready static files will be output to the `/dist` folder.  
+These files can later be served locally via the ATTMS Maintenance API.
+
+## ⚙️ Development Notes
+
+- **Authentication:**  
+  Login is currently simulated. No real backend authentication is yet implemented.
+- **API Integration:**  
+  Only authentication API (`authApi.js`) is scaffolded.  
+  Ticket and Account API services are planned but not yet wired.
+
+- **Planned Enhancements:**
+  - Implement real login with ATTMS Maintenance API
+  - Wire Ticket List and Account List pages to real APIs
+  - Add pagination, filtering, and search functionality
+  - Enhance error handling and session management
+  - Implement localStorage-based session persistence
+
+## 📄 License
+
+AdminUI is part of the ATTMS platform and is intended for open-source release under the MIT License (pending).
+
+## 🙌 Acknowledgements
+
+- [React](https://react.dev/)
+- [Vite](https://vitejs.dev/)
+- [Material-UI](https://mui.com/)

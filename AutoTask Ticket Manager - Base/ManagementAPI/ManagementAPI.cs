@@ -1,7 +1,14 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Serilog;
+using System.Text.Json;
+
+//using AutoTaskTicketManager_Base.Models;
+//using using AutoTaskTicketManager_Base.MSGraphAPI;
+//using System.Net;
+//using Microsoft.EntityFrameworkCore;
 
 
 namespace AutoTaskTicketManager_Base.ManagementAPI
@@ -95,58 +102,58 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
             #endregion
 
             #region Company Count from companies dictionary
-            ////Return the current list of companies contained in the Companies.companies dictionary
-            //endpoints.MapGet("/AutoTaskCompanies/CompanyList", async context =>
-            //{
-            //    string maintApiMessage = "In Bound Maint. API to: Return the current list of companies contained in the Companies.companies dictionary";
-            //    Log.Debug(maintApiMessage);
+            //Return the current list of companies contained in the Companies.companies dictionary
+            endpoints.MapGet("/AutoTaskCompanies/CompanyList", async context =>
+            {
+                string maintApiMessage = "In Bound Maint. API to: Return the current list of companies contained in the Companies.companies dictionary";
+                Log.Debug(maintApiMessage);
 
-            //    List<KeyValuePair<Int64, object[]>> companiesList = Companies.GetCompaniesListforManagementAPI();
-            //    var response = new { GetCompaniesListforManagementAPI = companiesList };
-            //    var json = JsonSerializer.Serialize(response);
-            //    context.Response.ContentType = "application/json";
+                List<KeyValuePair<Int64, object[]>> companiesList = Companies.GetCompaniesListforManagementAPI();
+                var response = new { GetCompaniesListforManagementAPI = companiesList };
+                var json = JsonSerializer.Serialize(response);
+                context.Response.ContentType = "application/json";
 
-            //    try
-            //    {
-            //        await context.Response.WriteAsync(json);
-            //        Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CompanyList -" +
-            //            "Return the current list of companies contained in the Companies.companies dictionary");
-            //    }
+                try
+                {
+                    await context.Response.WriteAsync(json);
+                    Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CompanyList -" +
+                        "Return the current list of companies contained in the Companies.companies dictionary");
+                }
 
-            //    catch (Exception ex)
-            //    {
-            //        Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CompanyList - " +
-            //            $"Return the current list of companies contained in the Companies.companies dictionary -{ex}");
-            //    }
+                catch (Exception ex)
+                {
+                    Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CompanyList - " +
+                        $"Return the current list of companies contained in the Companies.companies dictionary -{ex}");
+                }
 
-            //});
+            });
             #endregion
 
             #region Return Company Count from DataBase
-            ////Return Company Count from the SQL DB
-            //endpoints.MapGet("/AutoTaskCompanies/CountInSql", async context =>
-            //{
-            //    string maintApiMessage = "In Bound Maint. API to: Return Company Count from the SQL DB";
-            //    Log.Debug("\n");
-            //    Log.Debug(maintApiMessage);
+            //Return Company Count from the SQL DB
+            endpoints.MapGet("/AutoTaskCompanies/CountInSql", static async context =>
+            {
+                string maintApiMessage = "In Bound Maint. API to: Return Company Count from the SQL DB";
+                Log.Debug("\n");
+                Log.Debug(maintApiMessage);
 
-            //    var countInSql = ManagementApiHelper.GetCompanyCountFromSql();
-            //    var response = new { CompanyCount = countInSql };
-            //    var json = JsonSerializer.Serialize(response);
-            //    context.Response.ContentType = "application/json";
+                var countInSql = ManagementApiHelper.GetCompanyCountFromSql();
+                var response = new { CompanyCount = countInSql };
+                var json = JsonSerializer.Serialize(response);
+                context.Response.ContentType = "application/json";
 
-            //    try
-            //    {
-            //        await context.Response.WriteAsync(json);
-            //        Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CountInSql");
-            //    }
+                try
+                {
+                    await context.Response.WriteAsync(json);
+                    Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CountInSql");
+                }
 
-            //    catch (Exception ex)
-            //    {
-            //        Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CountInSql - {ex}");
-            //    }
+                catch (Exception ex)
+                {
+                    Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CountInSql - {ex}");
+                }
 
-            //});
+            });
             #endregion
 
             #region Return Active Company Count from AutoTask API
