@@ -1,10 +1,12 @@
-﻿using AutoTaskTicketManager_Base.Common.Utilities;
+﻿using Asp.Versioning;
+using AutoTaskTicketManager_Base.Common.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AutoTaskTicketManager_Base.Controllers
 {
     [ApiController]
-    [Route("api/setup")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/setup")]
     public class SetupController : ControllerBase
     {
         [HttpPost("generate-encryption-key")]

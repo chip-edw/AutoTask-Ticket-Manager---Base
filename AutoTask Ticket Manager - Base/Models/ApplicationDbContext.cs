@@ -9,12 +9,15 @@ namespace AutoTaskTicketManager_Base.Models
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+            //Empty constructor body. Was bugging me so I put this comment here.
         }
 
         public DbSet<ConfigStore> ConfigStore { get; set; }
         public DbSet<CustomerSettings> CustomerSettings { get; set; }
         public DbSet<Scheduler> Schedulers { get; set; }
         public DbSet<SenderAssignments> SenderAssignments { get; set; }
+        public DbSet<SenderExclusion> SenderExclusions { get; set; }
+        public DbSet<SubjectExclusionKeyword> SubjectExclusionKeywords { get; set; }
 
 
         #region OnConfiguring Method

@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
 

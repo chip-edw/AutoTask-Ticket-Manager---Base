@@ -159,14 +159,14 @@ namespace AutoTaskTicketManager_Base
                 StartupConfiguration.LoadAutoAssignCompanies(dbContext);
                 StartupConfiguration.LoadAutoAssignSenders(dbContext);
 
-                ////Loads all the SubjectExclusionKeyWords from the Database
-                //StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL();
+                //Loads all the SubjectExclusionKeyWords from the Database
+                StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL(dbContext);
 
-                ////Loads all the SenderExclusions from the Database
-                //StartupConfiguration.LoadSenderExclusionListFromSQL();
+                //Loads all the SenderExclusions from the Database
+                StartupConfiguration.LoadSenderExclusionListFromSQL(dbContext);
 
-                ////Compares the SQL DB with what was loaded into memory and if anything is missing in SQL it gets added
-                //StartupConfiguration.UpdateDataBaseWithMissingCompanies();
+                //Compares the SQL DB with companies loaded into memory and if any are missing in SQL they get added
+                StartupConfiguration.UpdateDataBaseWithMissingCompanies(dbContext);
 
                 ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
                 //StartupConfiguration.LoadAutoAssignMembers();
