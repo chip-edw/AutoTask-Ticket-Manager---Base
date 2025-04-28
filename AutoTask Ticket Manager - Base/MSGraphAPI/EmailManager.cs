@@ -1,7 +1,7 @@
-﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+﻿using AutoTaskTicketManager.Services;
+using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.Common.Utilities;
-using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using Azure.Identity;
 using HtmlAgilityPack;
@@ -1273,10 +1273,12 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         public static async Task<bool> SubjectExclusionKeyWords(string subject)
         {
-            List<string> subjectExclusionKeyWordList = ManagementApiHelper.GetSubjectExclusionKeyWordsFromList().Result;
+            //List<string> subjectExclusionKeyWordList = ManagementApiHelper.GetSubjectExclusionKeyWordsFromList().Result;
+            List<string> subjectExclusionList = ExclusionService.GetSubjectExclusions();
+
             RegexOptions options = RegexOptions.IgnoreCase;
 
-            foreach (string item in subjectExclusionKeyWordList)
+            foreach (string item in subjectExclusionList) //subjectExclusionKeyWordList)
             {
                 string pattern = "\\b" + item;
 
@@ -1296,7 +1298,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         public static async Task<bool> SenderExclusionEmailAddresses(string from)
         {
-            List<string> senderExclusionEmailList = ManagementApiHelper.GetSenderExclusionsFromList().Result;
+            //List<string> senderExclusionEmailList = ManagementApiHelper.GetSenderExclusionsFromList().Result;
+            List<string> senderExclusionEmailList = ExclusionService.GetSenderExclusions();
             RegexOptions options = RegexOptions.IgnoreCase;
 
             foreach (string item in senderExclusionEmailList)

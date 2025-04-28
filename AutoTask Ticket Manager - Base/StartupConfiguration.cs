@@ -314,6 +314,8 @@ namespace AutoTaskTicketManager_Base
 
         public static void UpdateDataBaseWithMissingCompanies(ApplicationDbContext dbContext)
         {
+            Log.Information("Starting update of CustomerSettings with missing AutoTask companies...");
+
             // Retrieve existing company IDs from the SQL table
             var existingCompanyIds = dbContext.CustomerSettings
                                             .Select(cs => cs.AutotaskId)
@@ -327,11 +329,17 @@ namespace AutoTaskTicketManager_Base
                 int companyId = (int)entry.Key; // Assuming the key is the company ID
                 object[] companyData = entry.Value;
 
+                // Special handling: Skip Owner Company (ID 0)
+                if (companyId == 0)
+                {
+                    Log.Information("Skipping Owner Company (ID 0) during database update process.");
+                    continue;
+                }
+
                 // Check if the company ID does not exist in the database
                 if (!existingCompanyIds.Contains(companyId))
                 {
                     // Assuming companyData[0] is AccountName, companyData[1] is Enabled, etc.
-                    // Make sure the index and types are correctly aligned with your data structure
                     var newCustomerSetting = new CustomerSettings
                     {
                         AutotaskId = companyId,
@@ -352,10 +360,15 @@ namespace AutoTaskTicketManager_Base
             }
 
             // Save changes to the database
-            dbContext.SaveChanges();
-
-            // Log the total number of companies added
-            Log.Information("{Count} new companies added to the database\n", addedCompaniesCount);
+            if (addedCompaniesCount > 0)
+            {
+                dbContext.SaveChanges();
+                Log.Information("Saved {Count} new companies to database.", addedCompaniesCount);
+            }
+            else
+            {
+                Log.Information("No new companies needed to be added.");
+            }
 
         }
 

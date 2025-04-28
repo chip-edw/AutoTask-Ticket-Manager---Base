@@ -132,27 +132,27 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
 
         }
 
-        public static async Task<string> GetCompanyCountFromSql()
-        {
-            try
-            {
-                using (var context = new ApplicationDbContext(_dbOptions)) // DbContext name from Models Class
-                {
-                    Log.Debug("Attempting to load the Company Count from DB.");
+        //public static async Task<string> GetCompanyCountFromSql()
+        //{
+        //    try
+        //    {
+        //        using (var context = new ApplicationDbContext(_dbOptions)) // DbContext name from Models Class
+        //        {
+        //            Log.Debug("Attempting to load the Company Count from DB.");
 
-                    // Query to count all entries in CustomerSettings
-                    int count = await context.CustomerSettings.CountAsync();
+        //            // Query to count all entries in CustomerSettings
+        //            int count = await context.CustomerSettings.CountAsync();
 
-                    Log.Debug("Retrieved Count of Companies from SQL successfully...");
+        //            Log.Debug("Retrieved Count of Companies from SQL successfully...");
 
-                    return count.ToString();
-                }
-            }
-            catch (Exception ex) // Catching a more general exception as Entity Framework might throw different exceptions
-            {
-                Log.Error("Unable to retrieve the Company Count from DB. Exception: ", ex);
-                return "failure";
-            }
-        }
+        //            return count.ToString();
+        //        }
+        //    }
+        //    catch (Exception ex) // Catching a more general exception as Entity Framework might throw different exceptions
+        //    {
+        //        Log.Error("Unable to retrieve the Company Count from DB. Exception: ", ex);
+        //        return "failure";
+        //    }
+        //}
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Asp.Versioning;
+using AutoTaskTicketManager.Common.Models;
+using AutoTaskTicketManager.Services;
 using AutoTaskTicketManager_Base.ManagementAPI;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -17,76 +19,89 @@ namespace AutoTaskTicketManager_Base.Controllers
             _managementService = managementService;
         }
 
+
+        #region AutoTaskCompanies/CountInSql
         /// <summary>
         /// Returns the number of companies stored in the ATTMS CustomerSettings table.
         /// </summary>
         [HttpGet("AutoTaskCompanies/CountInSql")]
-        public async Task<ActionResult<object>> GetCompanyCountInSql()
+        public async Task<ActionResult<ApiResponse<object>>> GetCompanyCountInSql()
         {
             Log.Debug("Inbound Management API: GetCompanyCountInSql");
 
             try
             {
                 int count = await _managementService.GetCompanyCountAsync();
-                return Ok(new { CompanyCount = count });
+
+                var response = new { CompanyCount = count };
+                return Ok(ApiResponse<object>.Ok(response));
             }
             catch (Exception ex)
             {
-                Log.Error("Error retrieving Company Count from SQL. Exception: {ExceptionMessage}", ex.Message);
-                return StatusCode(500, "An error occurred while retrieving the Company Count.");
+                Log.Error(ex, "Error retrieving Company Count from SQL.");
+                return StatusCode(500, ApiResponse<string>.Fail("An error occurred while retrieving the Company Count."));
             }
         }
+        #endregion
 
+
+        #region TicketProcessing/SenderExclusionList
         /// <summary>
         /// Returns the list of Sender Exclusions used to prevent automatic ticket creation.
         /// </summary>
         /// <returns>JSON array of sender exclusion email addresses</returns>
         [HttpGet("TicketProcessing/SenderExclusionList")]
-        public ActionResult<IEnumerable<string>> GetSenderExclusionList()
+        public ActionResult<ApiResponse<IEnumerable<string>>> GetSenderExclusionList()
         {
-            Log.Debug("\nInbound Management API (Controller): Return Sender Exclusion List");
+            Log.Debug("Inbound Management API (Controller): Return Sender Exclusion List");
 
             try
             {
-                var senderExclusionList = StartupConfiguration.senderExclusionsList;
+                var senderExclusionList = ExclusionService.GetSenderExclusions();
 
                 if (senderExclusionList == null || senderExclusionList.Count == 0)
                 {
-                    return NotFound("No Sender Exclusions found.");
+                    return NotFound(ApiResponse<string>.Fail("No Sender Exclusions found."));
                 }
 
-                return Ok(senderExclusionList);
+                return Ok(ApiResponse<IEnumerable<string>>.Ok(senderExclusionList));
             }
             catch (Exception ex)
             {
-                Log.Error("Failed to retrieve Sender Exclusions. Exception: {ExceptionMessage}", ex.Message);
-                return StatusCode(500, "An error occurred while retrieving Sender Exclusions.");
+                Log.Error(ex, "Failed to retrieve Sender Exclusions.");
+                return StatusCode(500, ApiResponse<string>.Fail("An error occurred while retrieving Sender Exclusions."));
             }
         }
+        #endregion
 
+
+        #region TicketProcessing/SubjectExclusionList
+        /// <summary>
+        /// Gets the list of email Subject Keywords that result in bypassing ticket creation for that specific email
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("TicketProcessing/SubjectExclusionList")]
-        public async Task<ActionResult<IEnumerable<string>>> GetSubjectExclusionList()
+        public ActionResult<ApiResponse<IEnumerable<string>>> GetSubjectExclusionList()
         {
-            Log.Debug("\nInbound Management API (Controller): Return Subject Exclusion Keyword List for Ticket Processing");
+            Log.Debug("Inbound Management API (Controller): Return Subject Exclusion Keyword List for Ticket Processing");
 
             try
             {
-                var exclusionList = StartupConfiguration.subjectExclusionKeyWordList;
+                var exclusionList = ExclusionService.GetSubjectExclusions(); //StartupConfiguration.subjectExclusionKeyWordList;
 
                 if (exclusionList == null || exclusionList.Count == 0)
                 {
-                    return NotFound("No Subject Exclusion Keywords found.");
+                    return NotFound(ApiResponse<string>.Fail("No Subject Exclusion Keywords found."));
                 }
 
-                return Ok(exclusionList);
+                return Ok(ApiResponse<IEnumerable<string>>.Ok(exclusionList));
             }
             catch (Exception ex)
             {
-                Log.Error("Failed to retrieve Subject Exclusion Keywords. Exception: {ExceptionMessage}", ex.Message);
-                return StatusCode(500, "An error occurred while retrieving Subject Exclusion Keywords.");
+                Log.Error(ex, "Failed to retrieve Subject Exclusion Keywords.");
+                return StatusCode(500, ApiResponse<string>.Fail("An error occurred while retrieving Subject Exclusion Keywords."));
             }
         }
-
-
+        #endregion
     }
 }
