@@ -39,6 +39,7 @@ namespace AutoTaskTicketManager_Base
         private readonly ISchedulerJobLoader _schedulerJobLoader;
         private readonly ISchedulerResultReporter _resultReporter;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly StartupLoaderService _startupLoaderService;
 
 
 
@@ -46,7 +47,7 @@ namespace AutoTaskTicketManager_Base
             SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
             IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager,
             ISchedulerJobLoader schedulerJobLoader, ISchedulerResultReporter resultReporter, IServiceScopeFactory serviceScopeFactory,
-            DbContextOptions<ApplicationDbContext> dbOptions)
+            StartupLoaderService startupLoaderService, DbContextOptions<ApplicationDbContext> dbOptions)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
@@ -60,6 +61,7 @@ namespace AutoTaskTicketManager_Base
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _schedulerJobLoader = schedulerJobLoader ?? throw new ArgumentNullException(nameof(_schedulerJobLoader));
             _resultReporter = resultReporter ?? throw new ArgumentNullException(nameof(resultReporter));
+            _startupLoaderService = startupLoaderService ?? throw new ArgumentNullException(nameof(startupLoaderService));
             _dbOptions = dbOptions;
         }
 
@@ -108,20 +110,13 @@ namespace AutoTaskTicketManager_Base
                 "Waiting 10 sec to ensure all Network Dependancies available. \n\n");
             Thread.Sleep(10 * 1000);
 
+            //####################### WE INITIALIZE THE STARTUP CONFIGURATION HERE ##########################
+            // ################ Loading Configuration.
+
+            await _startupLoaderService.LoadAllStartupDataAsync();
 
 
-
-            //Loads the AutoTask Ticket Field List so we can be dynamic with Picklists / Drop down menus changes
-            await _autotaskAPIGet.PicklistInformation(_picklistService);
-
-            ////Loads all active Autotask Companies from the AutoTask API into Companies.companies Dictionary
-            AutotaskAPIGet.GetAutoTaskCompanies();
-
-            //Load Open tickets into Dictionary
-            AutotaskAPIGet.GetNotCompletedTickets();
-
-            //Load Active AutoTask Resources into Dictionary
-            AutotaskAPIGet.GetAutoTaskActiveResources();
+            //########################################################################################
 
 
             //####################### WE INITIALIZE THE LOADED PLUGINS HERE ##########################
@@ -154,29 +149,6 @@ namespace AutoTaskTicketManager_Base
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                //Critical Config needing dbContext
-                StartupConfiguration.LoadSupportDistros(dbContext);
-                StartupConfiguration.LoadAutoAssignCompanies(dbContext);
-                StartupConfiguration.LoadAutoAssignSenders(dbContext);
-
-                //Loads all the SubjectExclusionKeyWords from the Database
-                StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL(dbContext);
-
-                //Loads all the SenderExclusions from the Database
-                StartupConfiguration.LoadSenderExclusionListFromSQL(dbContext);
-
-                //Compares the SQL DB with companies loaded into memory and if any are missing in SQL they get added
-                StartupConfiguration.UpdateDataBaseWithMissingCompanies(dbContext);
-
-                ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
-                //StartupConfiguration.LoadAutoAssignMembers();
-
-                ////Dictionary that holds the Flintfox senders who should be directly assigned to any ticket they raise.
-                // StartupConfiguration.LoadAutoAssignSenders(_dbOptions);
-
-                ////Loads all the AT Companies into a Dictionary that have the auto assign flag set
-                //StartupConfiguration.LoadAutoAssignCompanies(dbContext);
-
                 // Load scheduled jobs safely through scoped loader
                 var jobLoader = scope.ServiceProvider.GetRequiredService<ISchedulerJobLoader>();
                 var jobs = await jobLoader.LoadJobsAsync(cancellationToken);
@@ -191,6 +163,7 @@ namespace AutoTaskTicketManager_Base
                     plugin.Start();  // This spins up the scheduler thread
                 }
 
+
             }
 
 
@@ -201,6 +174,13 @@ namespace AutoTaskTicketManager_Base
 
             // ##########          Completes Application Startup and Prechecks          ##########
 
+            // Need to pause and let scheduler threads and configuration catch up so we dont step on the following Log with the BOX w/ Version
+            // It is only affecting the console logging but I like a pretty picture
+
+            Thread.Sleep(1 * 500);
+            Log.Information("\n\n");
+
+
             _logger.Information(" ____________________________________________");
             _logger.Information("|                                            |");
             _logger.Information("|     AutoTask Ticket Management Service     |");
@@ -208,8 +188,6 @@ namespace AutoTaskTicketManager_Base
             _logger.Information($"|        Application version: {assemblyVersion}        |");
             _logger.Information("|____________________________________________|");
             _logger.Information("\r\n\r\n");
-
-
 
         }
 
@@ -228,8 +206,6 @@ namespace AutoTaskTicketManager_Base
             Task<string> tokenTask = _confidentialClientApp.GetAccessToken();
 
             _logger.Information(">>> Task for token created. Status: {Status}", tokenTask.Status);
-
-
 
             try
             {
@@ -257,14 +233,10 @@ namespace AutoTaskTicketManager_Base
             }
 
 
-
-
-
             while (!cancellationToken.IsCancellationRequested && !cancelTokenIssued)
             {
                 try
                 {
-
                     if (Authenticate.GetExpiresOn() > DateTime.UtcNow)
                     {
                         // just to give some visual indication on the console that the roop is still running
@@ -300,8 +272,6 @@ namespace AutoTaskTicketManager_Base
 
                         //#################################################################################
                         // Logic for managing Unread e-mails
-                        // Remove the following resetting of the var unreadCount as functionality is added
-                        //int unreadCount = 0;
                         //#################################################################################
 
 
