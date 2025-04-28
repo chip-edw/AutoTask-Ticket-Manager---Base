@@ -1,7 +1,9 @@
 using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using AutoTaskTicketManager_Base.Services;
+using Microsoft.EntityFrameworkCore;
 using PluginContracts;
 using Serilog;
 
@@ -17,6 +19,8 @@ namespace AutoTaskTicketManager_Base
     public class Worker : BackgroundService, IWorkerService
     {
         #region Private readonly and Constructor
+
+        private readonly DbContextOptions<ApplicationDbContext> _dbOptions;
 
         private readonly Serilog.ILogger _logger;
         private volatile bool cancelTokenIssued = false;
@@ -41,7 +45,8 @@ namespace AutoTaskTicketManager_Base
         public Worker(ConfidentialClientApp confidentialClientApp, EmailManager emailManager,
             SecureEmailApiHelper emailApiHelper, ILogger<Worker> logger, IPicklistService picklistService,
             IConfiguration configuration, AutotaskAPIGet autotaskAPIGet, TicketHandler ticketHandler, PluginManager pluginManager,
-            ISchedulerJobLoader schedulerJobLoader, ISchedulerResultReporter resultReporter, IServiceScopeFactory serviceScopeFactory)
+            ISchedulerJobLoader schedulerJobLoader, ISchedulerResultReporter resultReporter, IServiceScopeFactory serviceScopeFactory,
+            DbContextOptions<ApplicationDbContext> dbOptions)
         {
             _confidentialClientApp = confidentialClientApp;
             _emailManager = emailManager;
@@ -55,6 +60,7 @@ namespace AutoTaskTicketManager_Base
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
             _schedulerJobLoader = schedulerJobLoader ?? throw new ArgumentNullException(nameof(_schedulerJobLoader));
             _resultReporter = resultReporter ?? throw new ArgumentNullException(nameof(resultReporter));
+            _dbOptions = dbOptions;
         }
 
         #endregion
@@ -84,6 +90,9 @@ namespace AutoTaskTicketManager_Base
 
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
+            // initialize the dbOptions for the Management API.
+            ManagementApiHelper.Initialize(_dbOptions);
+
             if (_picklistService == null)
             {
                 throw new InvalidOperationException("IPicklistService is null in Worker.StartAsync().");
@@ -122,6 +131,24 @@ namespace AutoTaskTicketManager_Base
             //########################################################################################
 
 
+            // Architecture Note:
+            // =============================================================
+            // We create a new IServiceScope for each scheduled job execution
+            // because Scheduler Plugins spin up on independent background threads.
+            // 
+            // Entity Framework Core DbContext is NOT thread-safe, and each thread
+            // must use its own scoped DbContext instance.
+            // 
+            // This ensures that concurrent jobs do not share DbContext instances
+            // and remain thread-safe and isolated.
+            //
+            // DO NOT attempt to share a single DbContext or DbContextOptions across
+            // scheduler jobs without a new scope per execution.
+            //
+            // Reference: EF Core Thread Safety - https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/
+            // =============================================================
+
+
 
             using (var scope = _serviceScopeFactory.CreateScope())
             {
@@ -132,14 +159,14 @@ namespace AutoTaskTicketManager_Base
                 StartupConfiguration.LoadAutoAssignCompanies(dbContext);
                 StartupConfiguration.LoadAutoAssignSenders(dbContext);
 
-                ////Loads all the SubjectExclusionKeyWords from the Database
-                //StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL();
+                //Loads all the SubjectExclusionKeyWords from the Database
+                StartupConfiguration.LoadSubjectExclusionKeyWordsFromSQL(dbContext);
 
-                ////Loads all the SenderExclusions from the Database
-                //StartupConfiguration.LoadSenderExclusionListFromSQL();
+                //Loads all the SenderExclusions from the Database
+                StartupConfiguration.LoadSenderExclusionListFromSQL(dbContext);
 
-                ////Compares the SQL DB with what was loaded into memory and if anything is missing in SQL it gets added
-                //StartupConfiguration.UpdateDataBaseWithMissingCompanies();
+                //Compares the SQL DB with companies loaded into memory and if any are missing in SQL they get added
+                StartupConfiguration.UpdateDataBaseWithMissingCompanies(dbContext);
 
                 ////Dictionary that holds all the AutoAssign members for AT companies that have the AutoAssign flag set in the local database CustomerSettings table
                 //StartupConfiguration.LoadAutoAssignMembers();

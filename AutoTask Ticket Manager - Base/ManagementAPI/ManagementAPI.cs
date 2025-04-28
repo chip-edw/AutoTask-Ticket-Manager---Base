@@ -1,7 +1,15 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Serilog;
+using System.Net;
+using System.Text.Json;
+
+//using AutoTaskTicketManager_Base.Models;
+//using using AutoTaskTicketManager_Base.MSGraphAPI;
+//using System.Net;
+//using Microsoft.EntityFrameworkCore;
 
 
 namespace AutoTaskTicketManager_Base.ManagementAPI
@@ -95,58 +103,31 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
             #endregion
 
             #region Company Count from companies dictionary
-            ////Return the current list of companies contained in the Companies.companies dictionary
-            //endpoints.MapGet("/AutoTaskCompanies/CompanyList", async context =>
-            //{
-            //    string maintApiMessage = "In Bound Maint. API to: Return the current list of companies contained in the Companies.companies dictionary";
-            //    Log.Debug(maintApiMessage);
+            //Return the current list of companies contained in the Companies.companies dictionary
+            endpoints.MapGet("/AutoTaskCompanies/CompanyList", async context =>
+            {
+                string maintApiMessage = "In Bound Maint. API to: Return the current list of companies contained in the Companies.companies dictionary";
+                Log.Debug(maintApiMessage);
 
-            //    List<KeyValuePair<Int64, object[]>> companiesList = Companies.GetCompaniesListforManagementAPI();
-            //    var response = new { GetCompaniesListforManagementAPI = companiesList };
-            //    var json = JsonSerializer.Serialize(response);
-            //    context.Response.ContentType = "application/json";
+                List<KeyValuePair<Int64, object[]>> companiesList = Companies.GetCompaniesListforManagementAPI();
+                var response = new { GetCompaniesListforManagementAPI = companiesList };
+                var json = JsonSerializer.Serialize(response);
+                context.Response.ContentType = "application/json";
 
-            //    try
-            //    {
-            //        await context.Response.WriteAsync(json);
-            //        Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CompanyList -" +
-            //            "Return the current list of companies contained in the Companies.companies dictionary");
-            //    }
+                try
+                {
+                    await context.Response.WriteAsync(json);
+                    Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CompanyList -" +
+                        "Return the current list of companies contained in the Companies.companies dictionary");
+                }
 
-            //    catch (Exception ex)
-            //    {
-            //        Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CompanyList - " +
-            //            $"Return the current list of companies contained in the Companies.companies dictionary -{ex}");
-            //    }
+                catch (Exception ex)
+                {
+                    Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CompanyList - " +
+                        $"Return the current list of companies contained in the Companies.companies dictionary -{ex}");
+                }
 
-            //});
-            #endregion
-
-            #region Return Company Count from DataBase
-            ////Return Company Count from the SQL DB
-            //endpoints.MapGet("/AutoTaskCompanies/CountInSql", async context =>
-            //{
-            //    string maintApiMessage = "In Bound Maint. API to: Return Company Count from the SQL DB";
-            //    Log.Debug("\n");
-            //    Log.Debug(maintApiMessage);
-
-            //    var countInSql = ManagementApiHelper.GetCompanyCountFromSql();
-            //    var response = new { CompanyCount = countInSql };
-            //    var json = JsonSerializer.Serialize(response);
-            //    context.Response.ContentType = "application/json";
-
-            //    try
-            //    {
-            //        await context.Response.WriteAsync(json);
-            //        Log.Debug("Transfer to Client Successful - Management API - /AutoTaskCompanies/CountInSql");
-            //    }
-
-            //    catch (Exception ex)
-            //    {
-            //        Log.Debug($"Transfer to Client Errored - Management API - /AutoTaskCompanies/CountInSql - {ex}");
-            //    }
-
-            //});
+            });
             #endregion
 
             #region Return Active Company Count from AutoTask API
@@ -340,36 +321,36 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
             #endregion
 
             #region Return Subject Exclusion Keywords from in memory list
-            //endpoints.MapGet("/SubjectExclusionKeyWord/Get", async context =>
-            //{
+            endpoints.MapGet("/SubjectExclusionKeyWord/Get", async context =>
+            {
 
-            //    try
-            //    {
-            //        string maintApiMessage = "In Bound Maint. API to: Return Subject Exclusion Keywords from in memory list";
-            //        Log.Debug(maintApiMessage);
+                try
+                {
+                    string maintApiMessage = "In Bound Maint. API to: Return Subject Exclusion Keywords from in memory list";
+                    Log.Debug(maintApiMessage);
 
-            //        var subjectExclusionKeyWordsList = ManagementApiHelper.GetSubjectExclusionKeyWordsFromList();
-            //        var response = new { GetSubjectExclusionKeyWordsFromList = subjectExclusionKeyWordsList };
-            //        var json = JsonSerializer.Serialize(response);
-            //        context.Response.ContentType = "application/json";
-            //        await context.Response.WriteAsync(json);
+                    var subjectExclusionKeyWordsList = ManagementApiHelper.GetSubjectExclusionKeyWordsFromList();
+                    var response = new { GetSubjectExclusionKeyWordsFromList = subjectExclusionKeyWordsList };
+                    var json = JsonSerializer.Serialize(response);
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(json);
 
-            //        Log.Debug("Transfer to Client Successful - Management API - /SubjectExclusionKeyWords/Get - " +
-            //            "Return the current list of Subject Exclusion Key Words from memory");
+                    Log.Debug("Transfer to Client Successful - Management API - /SubjectExclusionKeyWords/Get - " +
+                        "Return the current list of Subject Exclusion Key Words from memory");
 
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            //        context.Response.ContentType = "application/json";
-            //        var errorMessage = new { Message = $"Request Failed:   {ex}" };
-            //        var jsonResponse = JsonSerializer.Serialize(errorMessage);
-            //        await context.Response.WriteAsync(jsonResponse);
+                }
+                catch (Exception ex)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    context.Response.ContentType = "application/json";
+                    var errorMessage = new { Message = $"Request Failed:   {ex}" };
+                    var jsonResponse = JsonSerializer.Serialize(errorMessage);
+                    await context.Response.WriteAsync(jsonResponse);
 
-            //        Log.Debug($"Transfer to Client Failed - Management API - /SubjectExclusionKeyWords/Get - {ex}");
-            //    }
+                    Log.Debug($"Transfer to Client Failed - Management API - /SubjectExclusionKeyWords/Get - {ex}");
+                }
 
-            //});
+            });
             #endregion
 
             #region Update Subject Exclusion Keywords from Management Console in SQL and reload in memory list

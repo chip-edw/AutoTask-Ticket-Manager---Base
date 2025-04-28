@@ -3,6 +3,7 @@ using System;
 using AutoTaskTicketManager_Base.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AutoTaskTicketManager_Base.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250427132644_AddSenderAndSubjectExclusionTables")]
+    partial class AddSenderAndSubjectExclusionTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -145,6 +148,10 @@ namespace AutoTaskTicketManager_Base.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SenderAddress")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SenderName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

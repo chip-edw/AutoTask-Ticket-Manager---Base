@@ -1,4 +1,5 @@
-﻿using AutoTaskTicketManager_Base.Models;
+﻿using AutoTaskTicketManager_Base.AutoTaskAPI;
+using AutoTaskTicketManager_Base.Models;
 using Microsoft.Data.Sqlite;
 using Serilog;
 using System.Numerics;
@@ -224,9 +225,6 @@ namespace AutoTaskTicketManager_Base
 
             return null!;
         }
-
-
-
         public static void LoadAutoAssignSenders(ApplicationDbContext dbContext)
         {
             try
@@ -257,6 +255,121 @@ namespace AutoTaskTicketManager_Base
             {
                 Log.Error($"AppConfig.cs LoadAutoAssignSenders() encountered an error: {ex}");
             }
+        }
+        public static bool LoadSubjectExclusionKeyWordsFromSQL(ApplicationDbContext dbContext)
+        {
+            try
+            {
+                // Reload List from DB
+                var subjectExclusionKeyWords = dbContext.SubjectExclusionKeywords.ToList();
+                if (subjectExclusionKeyWordList.Count > 0)
+                {
+                    // Clear the list if not empty
+                    subjectExclusionKeyWordList.Clear();
+                }
+
+                foreach (var exclusion in subjectExclusionKeyWords)
+                {
+                    subjectExclusionKeyWordList.Add(exclusion.SubjectKeyWord);
+                }
+
+
+                Log.Debug($"Subject Exclusion KeyWords Loaded. Count: {StartupConfiguration.subjectExclusionKeyWordList.Count}\n");
+
+                return true;
+            }
+            catch (Exception ex) // Catching a more general exception
+            {
+                Log.Error("{0} Unable to read from database: {1}", nameof(LoadSubjectExclusionKeyWordsFromSQL), ex);
+                return false;
+            }
+        }
+        public static bool LoadSenderExclusionListFromSQL(ApplicationDbContext dbContext)
+        {
+            try
+            {
+                var senderExclusions = dbContext.SenderExclusions.ToList();
+
+                if (senderExclusionsList.Count > 0)
+                {
+                    // Clear the list if not empty
+                    senderExclusionsList.Clear();
+                }
+
+                foreach (var address in senderExclusions)
+                {
+                    senderExclusionsList.Add(address.SenderAddress);
+                }
+
+                Log.Debug($"Sender Exclusions Loaded. Count: {senderExclusionsList.Count}\n");
+
+                return true;
+            }
+            catch (Exception ex) // Catching a more general exception
+            {
+                Log.Error("{0} Unable to read from database: {1}", nameof(LoadSenderExclusionListFromSQL), ex);
+                return false;
+            }
+        }
+
+        public static void UpdateDataBaseWithMissingCompanies(ApplicationDbContext dbContext)
+        {
+            Log.Information("Starting update of CustomerSettings with missing AutoTask companies...");
+
+            // Retrieve existing company IDs from the SQL table
+            var existingCompanyIds = dbContext.CustomerSettings
+                                            .Select(cs => cs.AutotaskId)
+                                            .ToHashSet();
+
+            int addedCompaniesCount = 0; // Counter for the number of added companies
+
+            // Iterate through Companies.companies
+            foreach (var entry in Companies.companies)
+            {
+                int companyId = (int)entry.Key; // Assuming the key is the company ID
+                object[] companyData = entry.Value;
+
+                // Special handling: Skip Owner Company (ID 0)
+                if (companyId == 0)
+                {
+                    Log.Information("Skipping Owner Company (ID 0) during database update process.");
+                    continue;
+                }
+
+                // Check if the company ID does not exist in the database
+                if (!existingCompanyIds.Contains(companyId))
+                {
+                    // Assuming companyData[0] is AccountName, companyData[1] is Enabled, etc.
+                    var newCustomerSetting = new CustomerSettings
+                    {
+                        AutotaskId = companyId,
+                        AccountName = companyData.Length > 0 ? (string)companyData[0] : null,
+                        Enabled = companyData.Length > 1 ? Convert.ToBoolean(companyData[1]) : false,
+                        // Set the following fields to default values
+                        AutoAssign = false,
+                        EnableEmail = false,
+                        SupportEmail = ""
+                    };
+
+                    dbContext.CustomerSettings.Add(newCustomerSetting);
+                    addedCompaniesCount++;
+
+                    // Log the addition of a new company
+                    Log.Information("Added new company to database: {AutotaskId}, {AccountName}", newCustomerSetting.AutotaskId, newCustomerSetting.AccountName);
+                }
+            }
+
+            // Save changes to the database
+            if (addedCompaniesCount > 0)
+            {
+                dbContext.SaveChanges();
+                Log.Information("Saved {Count} new companies to database.", addedCompaniesCount);
+            }
+            else
+            {
+                Log.Information("No new companies needed to be added.");
+            }
+
         }
 
 

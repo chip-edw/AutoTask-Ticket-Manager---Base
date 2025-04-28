@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿using AutoTaskTicketManager_Base.Models;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Diagnostics;
 
 
@@ -7,10 +9,40 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
 
     public class ManagementApiHelper
     {
+        private static DbContextOptions<ApplicationDbContext> _dbOptions;
 
-        public ManagementApiHelper()
+        public ManagementApiHelper(DbContextOptions<ApplicationDbContext> dbOptions)
         {
+            _dbOptions = dbOptions;
         }
+
+        // Architecture Note:
+        // =============================================================
+        // ManagementApiHelper operates as a static helper class
+        // for occasional lightweight database access (e.g., internal
+        // Admin UI operations like company counts).
+        //
+        // It uses a static DbContextOptions<ApplicationDbContext> (_dbOptions)
+        // which must be initialized ONCE at application startup.
+        //
+        // _dbOptions must be assigned from a root-level DI service (not scoped),
+        // because scoped services are disposed after their lifetime ends,
+        // causing ObjectDisposedException if reused later.
+        //
+        // ManagementApiHelper is NOT used inside background threads or schedulers,
+        // so static access to a root-level DbContextOptions is acceptable.
+        //
+        // Future Improvement:
+        // Consider migrating to an injected scoped service or using a scoped DbContext factory
+        // if Management API operations become heavier or multithreaded.
+        // =============================================================
+
+
+        public static void Initialize(DbContextOptions<ApplicationDbContext> dbOptions)
+        {
+            _dbOptions = dbOptions;
+        }
+
 
         public static async void TestManagementAPI()
         {
@@ -93,12 +125,34 @@ namespace AutoTaskTicketManager_Base.ManagementAPI
 
         }
 
-
         public static async Task<List<string>> GetSenderExclusionsFromList()
         {
             //Return the StartupConfiguration public List subjectExclusionKeyWordList
             return StartupConfiguration.senderExclusionsList;
 
         }
+
+        //public static async Task<string> GetCompanyCountFromSql()
+        //{
+        //    try
+        //    {
+        //        using (var context = new ApplicationDbContext(_dbOptions)) // DbContext name from Models Class
+        //        {
+        //            Log.Debug("Attempting to load the Company Count from DB.");
+
+        //            // Query to count all entries in CustomerSettings
+        //            int count = await context.CustomerSettings.CountAsync();
+
+        //            Log.Debug("Retrieved Count of Companies from SQL successfully...");
+
+        //            return count.ToString();
+        //        }
+        //    }
+        //    catch (Exception ex) // Catching a more general exception as Entity Framework might throw different exceptions
+        //    {
+        //        Log.Error("Unable to retrieve the Company Count from DB. Exception: ", ex);
+        //        return "failure";
+        //    }
+        //}
     }
 }

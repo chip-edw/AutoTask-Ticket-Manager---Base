@@ -1,6 +1,8 @@
+using Asp.Versioning;
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.Common.Secrets;
+using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using AutoTaskTicketManager_Base.Scheduler;
@@ -55,6 +57,19 @@ namespace AutoTaskTicketManager_Base
                 // Add Controllers (required for MapControllers to work)
                 builder.Services.AddControllers();
 
+                //Went for the more robust versioning for the maintenance API
+                builder.Services.AddApiVersioning(options =>
+                {
+                    options.DefaultApiVersion = new ApiVersion(1, 0);
+                    options.AssumeDefaultVersionWhenUnspecified = true;
+                    options.ReportApiVersions = true;
+                    options.ApiVersionReader = ApiVersionReader.Combine(
+                        new UrlSegmentApiVersionReader(),
+                        new HeaderApiVersionReader("X-Api-Version"),
+                        new QueryStringApiVersionReader("api-version")
+                    );
+                });
+
                 //Register Singletons
                 builder.Services.AddSingleton<SecureEmailApiHelper>();
                 builder.Services.AddSingleton<ConfidentialClientApp>();
@@ -69,7 +84,7 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
                 builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
                 builder.Services.AddSingleton<ISecretsProvider, LocalSecretsProvider>();
-
+                builder.Services.AddScoped<IManagementService, ManagementService>();
 
 
                 //Register Scoped services
@@ -85,12 +100,10 @@ namespace AutoTaskTicketManager_Base
                 options.UseSqlite("Data Source=ATTMS.db"));
 
 
-
                 //Register Worker
                 builder.Services.AddHttpClient<SecureEmailApiHelper>();
                 builder.Services.AddScoped<IWorkerService, Worker>();
                 builder.Services.AddHostedService<ScopedWorkerHostedService>();
-
 
 
                 // Configure Kestrel for the internal maintenance API
@@ -162,18 +175,20 @@ namespace AutoTaskTicketManager_Base
 
         private static void ConfigureEndpoints(WebApplication app, int managementApiPort)
         {
-            // Protect /api/setup with localhost-only access
+            // GLOBAL ROUTING
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+            // Protect only /api/setup with localhost-only middleware
             app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/setup"), setupApp =>
             {
                 setupApp.UseMiddleware<AutoTaskTicketManager_Base.Common.Middleware.LocalhostOnlyMiddleware>();
-                setupApp.UseRouting();
-                setupApp.UseEndpoints(endpoints =>
-                {
-                    endpoints.MapControllers();
-                });
             });
 
-            // Expose a default endpoint for testing the API
+            // default root endpoint
             app.MapGet("/", (IServiceProvider services) =>
             {
                 var server = services.GetRequiredService<IServer>();
@@ -184,9 +199,10 @@ namespace AutoTaskTicketManager_Base
                 return $"Management API is UP and listening on: {listeningUrl}";
             });
 
-            // Map additional endpoints from the ManagementAPI class
+            // Map legacy endpoints
             ManagementAPI.ManagementAPI.Map(app);
         }
+
 
         private static void AttachGlobalHandlers()
         {
