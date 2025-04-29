@@ -6,12 +6,6 @@ using Serilog;
 using System.Net;
 using System.Text.Json;
 
-//using AutoTaskTicketManager_Base.Models;
-//using using AutoTaskTicketManager_Base.MSGraphAPI;
-//using System.Net;
-//using Microsoft.EntityFrameworkCore;
-
-
 namespace AutoTaskTicketManager_Base.ManagementAPI
 {
     public class ManagementAPI

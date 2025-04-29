@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using AutoTaskTicketManager.Common.Models;
 using AutoTaskTicketManager.Services;
-using AutoTaskTicketManager_Base.ManagementAPI;
+using AutoTaskTicketManager_Base.Services;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 

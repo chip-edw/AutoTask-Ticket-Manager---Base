@@ -332,7 +332,7 @@ namespace AutoTaskTicketManager_Base
                 // Special handling: Skip Owner Company (ID 0)
                 if (companyId == 0)
                 {
-                    Log.Information("Skipping Owner Company (ID 0) during database update process.");
+                    Log.Information("Skipping Owner Company (ID 0) during database update process.\n");
                     continue;
                 }
 
@@ -363,11 +363,12 @@ namespace AutoTaskTicketManager_Base
             if (addedCompaniesCount > 0)
             {
                 dbContext.SaveChanges();
+
                 Log.Information("Saved {Count} new companies to database.", addedCompaniesCount);
             }
             else
             {
-                Log.Information("No new companies needed to be added.");
+                Log.Information("No new companies needed to be added.\n");
             }
 
         }

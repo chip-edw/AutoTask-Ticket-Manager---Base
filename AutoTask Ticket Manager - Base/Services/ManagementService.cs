@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace AutoTaskTicketManager_Base.ManagementAPI
+namespace AutoTaskTicketManager_Base.Services
 {
     public class ManagementService : IManagementService
     {

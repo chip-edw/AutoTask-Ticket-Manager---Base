@@ -1,4 +1,4 @@
-﻿namespace AutoTaskTicketManager_Base.ManagementAPI
+﻿namespace AutoTaskTicketManager_Base.Services
 {
     public interface IManagementService
     {

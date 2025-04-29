@@ -2,7 +2,6 @@ using Asp.Versioning;
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
 using AutoTaskTicketManager_Base.Common.Secrets;
-using AutoTaskTicketManager_Base.ManagementAPI;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using AutoTaskTicketManager_Base.Scheduler;
@@ -85,6 +84,8 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
                 builder.Services.AddSingleton<ISecretsProvider, LocalSecretsProvider>();
                 builder.Services.AddScoped<IManagementService, ManagementService>();
+                builder.Services.AddSingleton<StartupLoaderService>();
+
 
 
                 //Register Scoped services
