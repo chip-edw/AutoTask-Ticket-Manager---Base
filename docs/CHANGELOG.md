@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here.
 
-## [1.0.3-beta] - 2025-07-20
+## [1.0.3-beta] - 2025-04-30
 ### Added
 - AdminUI Company Settings Management page
   - Editable grid for `supportEmail`, `enabled`, `enableEmail`, `autoAssign`
