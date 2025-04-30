@@ -85,6 +85,8 @@ namespace AutoTaskTicketManager_Base
                 builder.Services.AddSingleton<ISecretsProvider, LocalSecretsProvider>();
                 builder.Services.AddScoped<IManagementService, ManagementService>();
                 builder.Services.AddSingleton<StartupLoaderService>();
+                builder.Services.AddScoped<ICompanySettingsService, CompanySettingsService>();
+
 
 
 

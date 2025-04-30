@@ -151,6 +151,15 @@ Commercial consulting, deployment, and plugin customization services may be avai
 
 ---
 
+# 📚 Documentation
+
+These documents provide deeper insights into ATTMS internals:
+
+- [Email Processing Flow](docs/Email-Processing.md)
+- [Admin Maintenance Checklist](docs/Admin-Maintenance-Checklist.md)
+
+---
+
 # 🚀 ATTMS — Modernize AutoTask Support and CRM Workflows
 
 > *"Because your ITSM platform should work for you, not the other way around."*
