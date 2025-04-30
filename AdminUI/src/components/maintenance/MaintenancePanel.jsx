@@ -4,6 +4,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Divider,
 } from '@mui/material';
@@ -17,21 +18,21 @@ const MaintenancePanel = () => {
 
       <Box sx={{ mb: 2 }}>
         <List dense>
-          <ListItem button component={Link} to="company-settings">
+          <ListItemButton component={Link} to="company-settings">
             <ListItemText primary="Company Settings" />
-          </ListItem>
-          <ListItem button component={Link} to="system-stats">
+          </ListItemButton>
+          <ListItemButton component={Link} to="system-stats">
             <ListItemText primary="System Stats" />
-          </ListItem>
-          <ListItem button component={Link} to="subject-exclusions">
+          </ListItemButton>
+          <ListItemButton component={Link} to="subject-exclusions">
             <ListItemText primary="Subject Exclusions" />
-          </ListItem>
-          <ListItem button component={Link} to="sender-exclusions">
+          </ListItemButton>
+          <ListItemButton component={Link} to="sender-exclusions">
             <ListItemText primary="Sender Exclusions" />
-          </ListItem>
-          <ListItem button component={Link} to="reload">
+          </ListItemButton>
+          <ListItemButton component={Link} to="reload">
             <ListItemText primary="Reload Memory" />
-          </ListItem>
+          </ListItemButton>
         </List>
       </Box>
 

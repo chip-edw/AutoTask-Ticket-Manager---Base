@@ -14,7 +14,6 @@
  * Current strategy: Use Community version during MVP phase to avoid licensing costs.
  */
 
-
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -32,6 +31,7 @@ const CompanySettings = () => {
   const [companies, setCompanies] = useState([]);
   const [dirtyRows, setDirtyRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
 
@@ -41,6 +41,7 @@ const CompanySettings = () => {
 
   const fetchCompanySettings = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await axios.get('/api/v1/maintenance/companysettings');
       console.log("📦 Company data loaded:", res.data);
@@ -48,36 +49,40 @@ const CompanySettings = () => {
     } catch (error) {
       console.error('❌ Error fetching company settings:', error);
       setSnackbar({ open: true, message: 'Failed to load company settings' });
+      setLoadError(true);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCellEditCommit = (params) => {
-    const updatedRows = companies.map((row) =>
-      row.autotaskId === params.id ? { ...row, [params.field]: params.value } : row
-    );
-    setCompanies(updatedRows);
-    if (!dirtyRows.includes(params.id)) {
-      setDirtyRows([...dirtyRows, params.id]);
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
     const updates = companies.filter((c) => dirtyRows.includes(c.autotaskId));
+    console.log("💾 Saving rows:", updates); // 🔍 Add this
     try {
       await axios.put('/api/v1/maintenance/companysettings/update', updates);
       setSnackbar({ open: true, message: '✅ Company settings saved' });
       setDirtyRows([]);
       await refreshMemory();
     } catch (error) {
-      console.error('❌ Error saving settings:', error);
+      console.error('❌ Error saving settings:', error); // 🔍 Show response error
       setSnackbar({ open: true, message: 'Save failed' });
     } finally {
       setSaving(false);
     }
   };
+
+  const handleRowUpdate = (newRow) => {
+    const updatedRows = companies.map((row) =>
+      row.autotaskId === newRow.autotaskId ? newRow : row
+    );
+    setCompanies(updatedRows);
+    if (!dirtyRows.includes(newRow.autotaskId)) {
+      setDirtyRows([...dirtyRows, newRow.autotaskId]);
+    }
+    return newRow; // required
+  };
+  
 
   const refreshMemory = async () => {
     try {
@@ -97,45 +102,56 @@ const CompanySettings = () => {
       width: 250,
       editable: true,
     },
-    { field: 'enabled', headerName: 'Enabled', type: 'boolean', editable: true },
-    { field: 'enableEmail', headerName: 'Enable Email', type: 'boolean', editable: true },
-    { field: 'autoAssign', headerName: 'Auto-Assign', type: 'boolean', editable: true },
+    { field: 'enabled', headerName: 'Enabled', type: 'boolean', editable: true, width: 120 },
+    { field: 'enableEmail', headerName: 'Enable Email', type: 'boolean', editable: true, width: 140 },
+    { field: 'autoAssign', headerName: 'Auto Assign', type: 'boolean', editable: true, width: 140 },
   ];
 
   return (
     <Box sx={{ height: 600, width: '100%' }}>
-<Typography>This is CompanySettings.jsx</Typography>
+      <Typography variant="h5" gutterBottom>
+        Company Settings Management
+      </Typography>
 
       {loading ? (
         <CircularProgress />
+      ) : loadError ? (
+        <Typography color="error" sx={{ mt: 2 }}>
+          ⚠️ Failed to load company settings. Please try again later.
+        </Typography>
       ) : (
         <DataGrid
           rows={companies}
           columns={columns}
           getRowId={(row) => row.autotaskId}
-          onCellEditCommit={handleCellEditCommit}
+          processRowUpdate={handleRowUpdate}
+          experimentalFeatures={{ newEditingApi: true }}
           pageSize={25}
           rowsPerPageOptions={[25, 50, 100]}
           checkboxSelection={false}
           disableRowSelectionOnClick
         />
       )}
-      <Box sx={{ mt: 2 }}>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={saving || dirtyRows.length === 0}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={refreshMemory}
-          sx={{ ml: 2 }}
-        >
-          Refresh Memory
-        </Button>
-      </Box>
+
+      {!loadError && (
+        <Box sx={{ mt: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving || dirtyRows.length === 0}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={refreshMemory}
+            sx={{ ml: 2 }}
+          >
+            Refresh Memory
+          </Button>
+        </Box>
+      )}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
