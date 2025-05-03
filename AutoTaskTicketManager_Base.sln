@@ -20,11 +20,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AdminUI", "AdminUI", "{02EA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
-		CHANGELOG.md = CHANGELOG.md
 		CONTRIBUTING.md = CONTRIBUTING.md
-		INTERNALROADMAP.md = INTERNALROADMAP.md
 		README.md = README.md
-		ROADMAP.md = ROADMAP.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1E566C49-F45D-4D4C-8582-6BB71DA9102A}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Admin-Maintenance-Checklist.md = docs\Admin-Maintenance-Checklist.md
+		docs\CHANGELOG.md = docs\CHANGELOG.md
+		docs\Email-Processing.md = docs\Email-Processing.md
+		docs\INTERNALROADMAP.md = docs\INTERNALROADMAP.md
+		docs\ROADMAP.md = docs\ROADMAP.md
 	EndProjectSection
 EndProject
 Global

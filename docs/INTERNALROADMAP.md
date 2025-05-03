@@ -29,5 +29,6 @@
 - Scheduled Dynamic Reloads: Implement scheduled background refresh of critical dictionaries and lists (e.g., nightly AutoTask sync).
 - Database Migrations: Add automatic database migration logic for SQLite schema evolution at startup.
 - Prepare for GitHub Open Source Launch: Final documentation polish, licensing decisions, and community guidelines.
+- Refactor ExclusionService to use DI and implement IExclusionService
 
 ---

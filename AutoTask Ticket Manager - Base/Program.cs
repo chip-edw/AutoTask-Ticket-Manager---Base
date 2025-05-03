@@ -1,18 +1,13 @@
 using Asp.Versioning;
-using AutoTaskTicketManager_Base.AutoTaskAPI;
-using AutoTaskTicketManager_Base.AutoTaskAPI.Utilities;
-using AutoTaskTicketManager_Base.Common.Secrets;
+using AutoTaskTicketManager_Base.Extensions;
 using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
-using AutoTaskTicketManager_Base.Scheduler;
 using AutoTaskTicketManager_Base.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
-using PluginContracts;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base
@@ -69,42 +64,8 @@ namespace AutoTaskTicketManager_Base
                     );
                 });
 
-                //Register Singletons
-                builder.Services.AddSingleton<SecureEmailApiHelper>();
-                builder.Services.AddSingleton<ConfidentialClientApp>();
-                builder.Services.AddSingleton<IMsalHttpClientFactory, MsalHttpClientFactory>();
-                builder.Services.AddScoped<EmailManager>();
-                builder.Services.AddSingleton<IApiClient, ApiClient>();
-                builder.Services.AddSingleton<IPicklistService, PicklistService>();
-                builder.Services.AddSingleton<AutotaskAPIGet>();
-                builder.Services.AddSingleton<AutoTaskResources>();
-                builder.Services.AddSingleton<TicketHandler>();
-                builder.Services.AddSingleton<PluginManager>();
-                builder.Services.AddScoped<ISchedulerJobLoader, SchedulerJobLoader>();
-                builder.Services.AddSingleton<IOpenTicketService, OpenTicketService>();
-                builder.Services.AddSingleton<ISecretsProvider, LocalSecretsProvider>();
-                builder.Services.AddScoped<IManagementService, ManagementService>();
-                builder.Services.AddSingleton<StartupLoaderService>();
-
-
-
-                //Register Scoped services
-                builder.Services.AddScoped<ISchedulerResultReporter>(provider =>
-                {
-                    var dbContext = provider.GetRequiredService<ApplicationDbContext>();
-                    return new SchedulerResultReporter(dbContext);
-                });
-
-
-                //Register ApplicationDbContext needed so we can create new DbContext instances to use across threads
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite("Data Source=ATTMS.db"));
-
-
-                //Register Worker
-                builder.Services.AddHttpClient<SecureEmailApiHelper>();
-                builder.Services.AddScoped<IWorkerService, Worker>();
-                builder.Services.AddHostedService<ScopedWorkerHostedService>();
+                // Begin Register Services and Singletons - See ServiceCollectionExtensions.cs 
+                builder.Services.AddAppServices();
 
 
                 // Configure Kestrel for the internal maintenance API

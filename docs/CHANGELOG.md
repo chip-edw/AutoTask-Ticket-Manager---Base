@@ -2,12 +2,23 @@
 
 All notable changes to this project will be documented here.
 
+## [1.0.3-beta] - 2025-04-30
+### Added
+- AdminUI Company Settings Management page
+  - Editable grid for `supportEmail`, `enabled`, `enableEmail`, `autoAssign`
+  - Save button for batching updates via API
+  - Refresh button to reload memory after admin changes
+
+---
+ 
 ## [1.0.2-beta] - 2025-04-28
 ### Added
 - Added `MaintenanceController` for AdminUI-triggered dictionary and list reloads
 - Added `ReloadRequest` DTO for selective reload flexibility (Exclusions, Companies, Resources, etc.)
 - Created `StartupLoaderService` for centralized, scoped startup data loading
 - Introduced `LoadAllStartupDataAsync` method for structured initialization flow
+
+---
 
 ### Changed
 - Refactored `ExclusionService` to use centralized master lists from `StartupConfiguration`

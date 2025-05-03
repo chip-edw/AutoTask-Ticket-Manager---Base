@@ -1,6 +1,7 @@
 ﻿using AutoTaskTicketManager_Base;
 using AutoTaskTicketManager_Base.AutoTaskAPI;
 using AutoTaskTicketManager_Base.Models;
+using AutoTaskTicketManager_Base.Services;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -8,14 +9,17 @@ using Serilog;
 [Route("api/v1/maintenance")]
 public class MaintenanceController : ControllerBase
 {
-    private readonly ILogger<MaintenanceController> _logger;
     private readonly ApplicationDbContext _dbContext;
+    private readonly ICompanySettingsService _companySettingsService;
 
-    public MaintenanceController(ILogger<MaintenanceController> logger, ApplicationDbContext dbContext)
+
+    public MaintenanceController(ApplicationDbContext dbContext, ICompanySettingsService companySettingsService)
     {
         _dbContext = dbContext;
+        _companySettingsService = companySettingsService;
     }
 
+    #region Reload Startup Lists and Dictionaries
     [HttpPost("reload")]
     public async Task<IActionResult> ReloadData([FromBody] ReloadRequest request)
     {
@@ -67,6 +71,44 @@ public class MaintenanceController : ControllerBase
 
         return Ok(new { Message = "Reload completed successfully" });
     }
+    #endregion
+
+
+    #region CompanySettings
+    /// <summary>
+    /// Get all company settings from SQL.
+    /// </summary>
+    [HttpGet("companysettings")]
+    public async Task<ActionResult<IEnumerable<CustomerSettings>>> GetCompanySettings()
+    {
+        var companies = await _companySettingsService.GetAllCompanySettingsFromSqlAsync();
+        return Ok(companies);
+    }
+    #endregion
+
+    [HttpPut("companysettings/update")]
+    public async Task<ActionResult<List<CustomerSettings>>> UpdateCompanySettingsBatch([FromBody] List<CustomerSettings> companies)
+    {
+        if (companies == null || companies.Count == 0)
+        {
+            return BadRequest("No company settings provided.");
+        }
+
+        await _companySettingsService.UpdateCompanySettingsBatchAsync(companies);
+
+        return Ok(companies);
+    }
+
+
+    [HttpPost("companysettings/refreshcompanymemory")]
+    public async Task<IActionResult> RefreshMemory()
+    {
+        AutoTaskTicketManager_Base.AutoTaskAPI.AutotaskAPIGet.GetAutoTaskCompanies();
+        return Ok("Memory refreshed successfully.");
+    }
+
+
+
 }
 
 public class ReloadRequest
