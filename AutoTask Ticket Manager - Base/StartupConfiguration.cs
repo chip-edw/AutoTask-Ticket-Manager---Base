@@ -270,7 +270,7 @@ namespace AutoTaskTicketManager_Base
 
                 foreach (var exclusion in subjectExclusionKeyWords)
                 {
-                    subjectExclusionKeyWordList.Add(exclusion.SubjectKeyWord);
+                    subjectExclusionKeyWordList.Add(exclusion.Keyword);
                 }
 
 
@@ -298,7 +298,7 @@ namespace AutoTaskTicketManager_Base
 
                 foreach (var address in senderExclusions)
                 {
-                    senderExclusionsList.Add(address.SenderAddress);
+                    senderExclusionsList.Add(address.Email);
                 }
 
                 Log.Debug($"Sender Exclusions Loaded. Count: {senderExclusionsList.Count}\n");

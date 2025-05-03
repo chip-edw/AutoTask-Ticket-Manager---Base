@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented here.
 
+## [1.0.4-beta] - 2025-05-03
+
+### Added
+- Completed implementation of Sender and Subject Exclusion Maintenance APIs:
+  - `GET`, `POST`, and `DELETE` endpoints for both sender and subject exclusions
+  - Fully documented `MaintenanceController` using XML-style summaries for consistency
+- Introduced `ISubjectExclusionService` interface and wired it into the controller via DI
+- Updated DTO references for exclusions to use consistent namespaces across all layers
+
+### Fixed
+- Resolved build error (`CS1503`) caused by ambiguous DTO type references in the controller
+- Aligned `ISenderExclusionService` and `SenderExclusionService.cs` with the `Dtos` namespace
+- Confirmed no remaining namespace or EF model mismatches across exclusions logic
+
+### Changed
+- Cleaned up `MaintenanceController.cs`:
+  - Removed unused/deferred `Auto-Assign Rules` region
+  - Ensured all exclusion endpoints follow consistent naming and route structure
+
+---
+
 ## [1.0.3-beta] - 2025-04-30
 ### Added
 - AdminUI Company Settings Management page
