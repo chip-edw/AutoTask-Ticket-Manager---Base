@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## [1.0.4-beta] - 2025-05-03
 
+### Notes
+- Renamed development branch from `feature/sender-subject-autoassign` to `feature/sender-subject-Exclusions` to reflect current scope.
+  - Auto-Assign functionality deferred to a future plugin-based rules engine.
+
 ### Added
 - Completed implementation of Sender and Subject Exclusion Maintenance APIs:
   - `GET`, `POST`, and `DELETE` endpoints for both sender and subject exclusions
