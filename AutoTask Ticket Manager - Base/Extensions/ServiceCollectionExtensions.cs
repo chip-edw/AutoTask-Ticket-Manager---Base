@@ -45,6 +45,8 @@ namespace AutoTaskTicketManager_Base.Extensions
             services.AddSingleton<StartupLoaderService>();
             services.AddScoped<EmailManager>();
             services.AddScoped<ISenderExclusionService, SenderExclusionService>();
+            services.AddScoped<ISubjectExclusionService, SubjectExclusionService>();
+
             #endregion
 
             #region Scheduler

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented here.
 
+## [1.0.4-beta] - 2025-05-04
+### Added
+- Admin UI: Sender and Subject Exclusions grid (add/delete with reload)
+- Snackbar feedback for exclusion changes
+- Memory reload triggered on exclusion updates
+
+### Fixed
+- Corrected API payload field for sender exclusion (`email`)
+- Resolved missing CreatedOn timestamp in SenderExclusionDto and SubjectExclusionKeywordDto
+- Adjusted frontend fallback logic for null exclusion fields
+
 ## [1.0.4-beta] - 2025-05-03
 
 ### Notes

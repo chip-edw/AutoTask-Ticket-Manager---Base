@@ -1,10 +1,8 @@
-const SenderExclusions = () => {
-  return (
-    <div>
-      <h2>Sender Exclusions</h2>
-      <p>Manage sender email exclusions.</p>
-    </div>
-  );
-};
+import React from 'react';
+import ExclusionPanel from './ExclusionPanel';
+
+const SenderExclusions = () => (
+  <ExclusionPanel title="Sender Exclusions" type="sender" />
+);
 
 export default SenderExclusions;

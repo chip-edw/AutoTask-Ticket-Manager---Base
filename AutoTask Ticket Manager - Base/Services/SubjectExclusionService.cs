@@ -21,7 +21,8 @@ namespace AutoTaskTicketManager_Base.Services
                 .Select(e => new SubjectExclusionKeywordDto
                 {
                     Id = e.Id,
-                    Keyword = e.Keyword
+                    Keyword = e.Keyword,
+                    CreatedOn = e.CreatedOn
                 })
                 .ToListAsync();
         }
@@ -40,7 +41,8 @@ namespace AutoTaskTicketManager_Base.Services
             return new SubjectExclusionKeywordDto
             {
                 Id = entity.Id,
-                Keyword = entity.Keyword
+                Keyword = entity.Keyword,
+                CreatedOn = entity.CreatedOn
             };
         }
 

@@ -21,7 +21,8 @@ namespace AutoTaskTicketManager_Base.Services
                 .Select(e => new SenderExclusionDto
                 {
                     Id = e.Id,
-                    Email = e.Email
+                    Email = e.Email,
+                    CreatedOn = e.CreatedOn
                 })
                 .ToListAsync();
         }
@@ -40,7 +41,8 @@ namespace AutoTaskTicketManager_Base.Services
             return new SenderExclusionDto
             {
                 Id = entity.Id,
-                Email = entity.Email
+                Email = entity.Email,
+                CreatedOn = entity.CreatedOn
             };
         }
 
