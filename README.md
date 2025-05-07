@@ -98,34 +98,24 @@ Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**
 
 ## 🗺️ Roadmap
 
-### Phase 1: MVP Release (v0.1)
+## 🗺️ Roadmap
 
-- [x] Secure Setup API (localhost-only protection)
-- [x] Encrypted Key Generation and Secrets Management
-- [ ] Secure API Key Authentication Middleware
-- [ ] Ticket Listing and Basic Dashboard UI
-- [ ] Management API endpoints:
-  - [ ] `/api/scheduler/reload`
-  - [ ] `/api/email/check`
-  - [ ] `/api/config/update`
-  - [ ] `/api/status/health`
-- [ ] Lightweight Windows Desktop Client (Phase 1 UI)
+ATTMS is developed in phased iterations:
 
-### Phase 2: Beta Enhancements (v0.5)
+### 🚧 MVP Release (v0.1)
+- Secure setup and configuration APIs
+- Microsoft Graph email ingestion + AutoTask ticket creation
+- Modular plugin scheduler
+- SQLite-based runtime config and job definitions
+- Admin Maintenance UI for Company Settings, Exclusions
 
-- Full Ticket Management interface (Create/Update/Assign)
-- Opportunity Dashboard (simplified CRM overlay)
-- Microsoft Teams Chat Updates for ticket changes
-- Microsoft Planner Task creation from AutoTask tickets
-- Optional PostgreSQL or Azure SQL backend support
+### 🔄 What’s Next?
+- Full ticket listing and assignment UI
+- Auto-assign plugin framework (deferred from MVP)
+- Internal health monitoring and service reload endpoints
 
-### Phase 3: Open Source Launch (v1.0+)
+👉 View the full development plan in [`ROADMAP.md`](./ROADMAP.md)
 
-- Publish Docker Images and install scripts
-- Optional Salesforce CRM basic integration
-- Public Contribution Guidelines and Plugin SDK
-- Cloud/SaaS self-hosted deployment instructions
-- Professional-grade API versioning (`/api/v1/...`)
 
 ---
 

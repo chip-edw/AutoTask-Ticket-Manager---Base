@@ -37,7 +37,7 @@ namespace AutoTaskTicketManager_Base.Services
             try
             {
                 var keywords = await _dbContext.SubjectExclusionKeywords
-                    .Select(x => x.SubjectKeyWord)
+                    .Select(x => x.Keyword)
                     .ToListAsync();
 
                 return keywords;
@@ -54,7 +54,7 @@ namespace AutoTaskTicketManager_Base.Services
             try
             {
                 var exclusions = await _dbContext.SenderExclusions
-                    .Select(x => x.SenderAddress)
+                    .Select(x => x.Email)
                     .ToListAsync();
 
                 return exclusions;

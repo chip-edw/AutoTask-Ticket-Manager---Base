@@ -1,9 +1,10 @@
 ﻿namespace AutoTaskTicketManager_Base.Models
 {
-    public class SubjectExclusionKeyword
+    public class SenderExclusion
     {
         public int Id { get; set; }
-        public string Keyword { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        // Timestamp to track when a sender was blocked
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
     }
 }

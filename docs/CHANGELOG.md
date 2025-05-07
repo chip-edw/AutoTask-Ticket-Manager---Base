@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented here.
 
+## [1.0.4-beta] - 2025-05-04
+### Added
+- Admin UI: Sender and Subject Exclusions grid (add/delete with reload)
+- Snackbar feedback for exclusion changes
+- Memory reload triggered on exclusion updates
+
+### Fixed
+- Corrected API payload field for sender exclusion (`email`)
+- Resolved missing CreatedOn timestamp in SenderExclusionDto and SubjectExclusionKeywordDto
+- Adjusted frontend fallback logic for null exclusion fields
+
+## [1.0.4-beta] - 2025-05-03
+
+### Notes
+- Renamed development branch from `feature/sender-subject-autoassign` to `feature/sender-subject-Exclusions` to reflect current scope.
+  - Auto-Assign functionality deferred to a future plugin-based rules engine.
+
+### Added
+- Completed implementation of Sender and Subject Exclusion Maintenance APIs:
+  - `GET`, `POST`, and `DELETE` endpoints for both sender and subject exclusions
+  - Fully documented `MaintenanceController` using XML-style summaries for consistency
+- Introduced `ISubjectExclusionService` interface and wired it into the controller via DI
+- Updated DTO references for exclusions to use consistent namespaces across all layers
+
+### Fixed
+- Resolved build error (`CS1503`) caused by ambiguous DTO type references in the controller
+- Aligned `ISenderExclusionService` and `SenderExclusionService.cs` with the `Dtos` namespace
+- Confirmed no remaining namespace or EF model mismatches across exclusions logic
+
+### Changed
+- Cleaned up `MaintenanceController.cs`:
+  - Removed unused/deferred `Auto-Assign Rules` region
+  - Ensured all exclusion endpoints follow consistent naming and route structure
+
+---
+
 ## [1.0.3-beta] - 2025-04-30
 ### Added
 - AdminUI Company Settings Management page

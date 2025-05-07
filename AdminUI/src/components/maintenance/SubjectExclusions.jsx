@@ -1,10 +1,8 @@
-const SubjectExclusions = () => {
-  return (
-    <div>
-      <h2>Subject Exclusions</h2>
-      <p>Manage subject keyword exclusions.</p>
-    </div>
-  );
-};
+import React from 'react';
+import ExclusionPanel from './ExclusionPanel';
+
+const SubjectExclusions = () => (
+  <ExclusionPanel title="Subject Exclusions" type="subject" />
+);
 
 export default SubjectExclusions;
