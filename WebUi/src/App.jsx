@@ -1,3 +1,5 @@
+import TicketPanel from './pages/tickets/TicketPanel';
+import TicketTable from './pages/tickets/TicketTable';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, Toolbar } from '@mui/material';
 
@@ -49,6 +51,13 @@ function App() {
                 <TicketList />
               </PrivateRoute>
             } />
+
+            <Route path="/tickets" element={<TicketPanel />}>
+              <Route index element={<TicketTable />} />
+              {/* Future options: */}
+              {/* <Route path="closed" element={<ClosedTicketTable />} /> */}
+              {/* <Route path=":ticketNumber" element={<TicketDetails />} /> */}
+            </Route>
 
             <Route path="/crm/accounts" element={
               <PrivateRoute>
