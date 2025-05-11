@@ -28,7 +28,7 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
                 includeFields = new[]
                 {
                     "id", "ticketNumber", "title", "status", "priority",
-                    "companyID", "createDate", "lastActivityDate"
+                    "queueID", "companyID", "createDate", "lastActivityDate"
                 },
                 maxRecords = pageSize,
                 startRecord = offset
@@ -50,6 +50,8 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
 
             foreach (var item in items)
             {
+                var companyId = item.Value<long?>("companyID") ?? 0;
+
                 var dto = new TicketUI
                 {
                     Id = item.Value<long?>("id") ?? 0,
@@ -57,10 +59,15 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
                     Title = item.Value<string>("title") ?? "",
                     Status = MapPicklistLabel("status", item.Value<string>("status")),
                     Priority = MapPicklistLabel("priority", item.Value<string>("priority")),
-                    CompanyName = item.Value<string>("companyName") ?? "",
-                    CreatedDate = item.Value<DateTime?>("createDateTime") ?? DateTime.MinValue,
-                    LastUpdated = item.Value<DateTime?>("lastActivityDateTime") ?? DateTime.MinValue
+                    QueueName = MapPicklistLabel("queueID", item.Value<string>("queueID")),
+                    CompanyName = Companies.companies.TryGetValue(companyId, out var values) && values.Length > 0
+                        ? values[0]?.ToString() ?? $"CompanyID: {companyId}"
+                        : $"CompanyID: {companyId}",
+
+                    CreatedDate = item.Value<DateTime?>("createDate") ?? DateTime.MinValue,
+                    LastUpdated = item.Value<DateTime?>("lastActivityDate") ?? DateTime.MinValue
                 };
+
 
                 results.Add(dto);
             }
@@ -97,6 +104,7 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
                 Title = item.Value<string>("title") ?? "",
                 Status = MapPicklistLabel("status", item.Value<string>("status")),
                 Priority = MapPicklistLabel("priority", item.Value<string>("priority")),
+                QueueName = MapPicklistLabel("queueID", item.Value<string>("queueID")),
                 CompanyName = item.Value<string>("companyName") ?? "",
                 CreatedDate = item.Value<DateTime?>("createDateTime") ?? DateTime.MinValue,
                 LastUpdated = item.Value<DateTime?>("lastActivityDateTime") ?? DateTime.MinValue

@@ -91,6 +91,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                 throw new ArgumentNullException(nameof(picklistService), "picklistService is null in PicklistInformation.");
             }
 
+            // Loads the Ticket Entity Picklists
             picklistService.GetPicklistInformationAsync().Wait();
 
             return Task.CompletedTask;

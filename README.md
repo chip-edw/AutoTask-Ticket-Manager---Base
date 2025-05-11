@@ -71,6 +71,20 @@ Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**
     ```csharp
     StartupConfiguration.GetProtectedSetting("ClientSecret");
     ```
+ ### 🧠 Company Cache (`Companies.companies`)
+
+ATTMS maintains an in-memory observable dictionary of AutoTask companies using the `Companies.companies` structure.  
+This cache is loaded at application startup or refreshed manually via the Maintenance API.
+
+It is used to enrich ticket data with company names in the Ticket Management screen.
+
+> ⚠️ If a new company is created in AutoTask and is assigned to a ticket,
+> it will **not appear correctly in the UI** until the Maintenance task is rerun to refresh the cache.
+
+This design avoids unnecessary database lookups and keeps runtime processing fast and lightweight.
+
+To view the current dictionary, use the internal Management API or UI tools under the **Company Settings** screen.
+
 
 ---
 

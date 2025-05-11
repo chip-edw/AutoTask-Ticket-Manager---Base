@@ -6,6 +6,15 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
     {
 
         //Dictionary holding all Companies
+        // NOTE:
+        // The `companies` dictionary is loaded into memory during application startup or maintenance refresh.
+        // It maps AutoTask Company IDs to their associated metadata (e.g., company name).
+        // This dictionary is used by various services to enrich tickets with company names.
+        //
+        // !!! If a new company is created in AutoTask and is associated with a ticket,
+        // the dictionary must be refreshed by running the maintenance job to ensure
+        // the ticket UI can display the correct company name.
+
         public static ObservableDictionary<Int64, object[]> companies = new ObservableDictionary<Int64, object[]>();
 
 

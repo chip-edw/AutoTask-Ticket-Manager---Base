@@ -8,6 +8,7 @@
         public string Status { get; set; } = "";
         public string Priority { get; set; } = "";
         public string CompanyName { get; set; } = "";
+        public string QueueName { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
         public DateTime LastUpdated { get; set; }
     }
