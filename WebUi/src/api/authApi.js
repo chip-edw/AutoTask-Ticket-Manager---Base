@@ -1,6 +1,6 @@
 export async function loginUser(email, password) {
   // Simulated login
-  if (email === 'admin@example.com' && password === 'admin123') {
+  if (email === 'admin@exp.com' && password === '!@#$1234') {
     return {
       success: true,
       token: 'fake-jwt-token-admin',

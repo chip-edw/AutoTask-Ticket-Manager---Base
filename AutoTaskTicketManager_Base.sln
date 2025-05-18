@@ -31,6 +31,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1E566C49-F
 		docs\Email-Processing.md = docs\Email-Processing.md
 		docs\INTERNALROADMAP.md = docs\INTERNALROADMAP.md
 		docs\ROADMAP.md = docs\ROADMAP.md
+		docs\dev\tailwind.md = docs\dev\tailwind.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dev", "dev", "{64BBAF83-1BEF-42F3-B58C-86703CD15634}"
+	ProjectSection(SolutionItems) = preProject
+		docs\dev\tailwind.md = docs\dev\tailwind.md
 	EndProjectSection
 EndProject
 Global
@@ -54,6 +60,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{64BBAF83-1BEF-42F3-B58C-86703CD15634} = {1E566C49-F45D-4D4C-8582-6BB71DA9102A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D1EA246A-83AC-4FB4-A75A-D7F2E1284D77}

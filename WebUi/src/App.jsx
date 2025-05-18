@@ -1,5 +1,6 @@
 import TicketPanel from './pages/tickets/TicketPanel';
 import TicketTable from './pages/tickets/TicketTable';
+import ColorTestPage from './pages/ColorTestPage';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, Toolbar } from '@mui/material';
 
@@ -58,6 +59,8 @@ function App() {
               {/* <Route path="closed" element={<ClosedTicketTable />} /> */}
               {/* <Route path=":ticketNumber" element={<TicketDetails />} /> */}
             </Route>
+
+            <Route path="/color-test" element={<ColorTestPage />} />
 
             <Route path="/crm/accounts" element={
               <PrivateRoute>

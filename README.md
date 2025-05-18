@@ -71,6 +71,17 @@ Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**
     ```csharp
     StartupConfiguration.GetProtectedSetting("ClientSecret");
     ```
+
+### 🎨 Frontend Styling with Tailwind CSS
+
+ATTMS uses **Tailwind CSS v3.4.3** for its Admin UI components.
+
+> ⚠️ Note: Tailwind v4 introduced a new PostCSS plugin format that caused color and utility classes to be omitted during Vite builds in our JSX-based setup.  
+> We are intentionally using Tailwind v3.4.3 for stability during MVP development.
+
+See [`docs/dev/tailwind.md`](./docs/dev/tailwind.md) for configuration details.
+
+
  ### 🧠 Company Cache (`Companies.companies`)
 
 ATTMS maintains an in-memory observable dictionary of AutoTask companies using the `Companies.companies` structure.  
