@@ -124,8 +124,6 @@ To view the current dictionary, use the internal Management API or UI tools unde
 
 ## 🗺️ Roadmap
 
-## 🗺️ Roadmap
-
 ATTMS is developed in phased iterations:
 
 ### 🚧 MVP Release (v0.1)
