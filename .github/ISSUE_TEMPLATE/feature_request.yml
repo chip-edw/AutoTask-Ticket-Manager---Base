@@ -1,0 +1,34 @@
+name: ✨ Feature Request
+description: Suggest a feature, plugin, or enhancement
+title: "[Feature]: "
+labels: [enhancement]
+assignees: "chip-edw"
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new idea! Please fill out the form to help us understand your request.
+
+  - type: input
+    id: component
+    attributes:
+      label: Area or component
+      description: Where would this enhancement apply?
+      placeholder: e.g. Scheduler, Email Processing, Admin UI
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature summary
+      description: Describe what you'd like to see and why it's helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Detailed requirements
+      description: Add any specific details, workflows, or mockups.
