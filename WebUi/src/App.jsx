@@ -1,6 +1,8 @@
 import TicketPanel from './pages/tickets/TicketPanel';
 import TicketTable from './pages/tickets/TicketTable';
+import TicketDetail from './pages/tickets/TicketDetail';
 import ColorTestPage from './pages/ColorTestPage';
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, Toolbar } from '@mui/material';
 
@@ -55,9 +57,9 @@ function App() {
 
             <Route path="/tickets" element={<TicketPanel />}>
               <Route index element={<TicketTable />} />
+              {<Route path=":ticketNumber" element={<TicketDetail />} />}
               {/* Future options: */}
-              {/* <Route path="closed" element={<ClosedTicketTable />} /> */}
-              {/* <Route path=":ticketNumber" element={<TicketDetails />} /> */}
+              {/* <Route path="closed" element={<ClosedTicketTable />} /> */}              
             </Route>
 
             <Route path="/color-test" element={<ColorTestPage />} />

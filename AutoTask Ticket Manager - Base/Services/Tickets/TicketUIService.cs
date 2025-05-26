@@ -75,14 +75,21 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
             return results;
         }
 
+
         public async Task<TicketUI?> GetTicketByNumberAsync(string ticketNumber)
         {
             var query = new
             {
                 filter = new[]
                 {
-                    new { op = "eq", field = "ticketNumber", value = ticketNumber }
-                }
+            new { op = "eq", field = "ticketNumber", value = ticketNumber }
+        },
+                includeFields = new[]
+                {
+            "id", "ticketNumber", "title", "status", "priority",
+            "queueID", "companyID", "createDate", "lastActivityDate"
+        },
+                maxRecords = 1
             };
 
             var response = await _apiClient.PostAsync("/Tickets/query", query);
@@ -97,6 +104,8 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
             var item = ((JArray?)json["items"])?.FirstOrDefault();
             if (item == null) return null;
 
+            var companyId = item.Value<long?>("companyID") ?? 0;
+
             return new TicketUI
             {
                 Id = item.Value<long?>("id") ?? 0,
@@ -105,11 +114,17 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
                 Status = MapPicklistLabel("status", item.Value<string>("status")),
                 Priority = MapPicklistLabel("priority", item.Value<string>("priority")),
                 QueueName = MapPicklistLabel("queueID", item.Value<string>("queueID")),
-                CompanyName = item.Value<string>("companyName") ?? "",
-                CreatedDate = item.Value<DateTime?>("createDateTime") ?? DateTime.MinValue,
-                LastUpdated = item.Value<DateTime?>("lastActivityDateTime") ?? DateTime.MinValue
+
+                CompanyName = Companies.companies.TryGetValue(companyId, out var values) && values.Length > 0
+                    ? values[0]?.ToString() ?? $"CompanyID: {companyId}"
+                    : $"CompanyID: {companyId}",
+
+                CreatedDate = item.Value<DateTime?>("createDate") ?? DateTime.MinValue,
+                LastUpdated = item.Value<DateTime?>("lastActivityDate") ?? DateTime.MinValue
             };
         }
+
+
 
         private static string MapPicklistLabel(string field, string? value)
         {

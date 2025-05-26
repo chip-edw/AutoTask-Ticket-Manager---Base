@@ -31,13 +31,24 @@ Focus: Core functionality to manage setup, encryption, and ticket visibility.
 - [x] `MaintenanceController` created using best practices
 - [x] Company Settings Admin UI completed
 - [x] Subject Exclusion Keywords model, DTO, service implemented
+
+**🔐 Management API**
 - [ ] Secure API Key Authentication Middleware
-- [ ] Basic Ticket Listing and Dashboard UI
 - [ ] Implement Management API endpoints:
   - [ ] `/api/scheduler/reload`
   - [x] `/api/email/check` (initial integration in Worker service)
   - [x] `/api/config/update` (via StartupConfiguration updates)
   - [ ] `/api/status/health`
+
+**🧾 Ticket UI & Dashboard**
+- [x] Basic Ticket Listing UI (sortable table, live API integration)
+- [ ] Ticket Detail View (clickable links to individual tickets)
+- [ ] Ticket Filtering (by queueName, status, companyName)
+- [ ] Basic Dashboard Metrics (ticket count summaries, trend indicators)
+- [ ] Manual Ticket Creation (via Admin UI or simplified ticket entry form)
+- [ ] Ticket Update (status, queue, assigned resource, etc.)
+
+**🖥️ Client Integration**
 - [ ] Lightweight Windows Desktop Client (initial interface)
 
 ---
@@ -99,6 +110,36 @@ This design was adopted to avoid a large-scale refactor due to static method usa
 **Target Release:** `v1.1`  
 **Status:** ⏳ Deferred — design accepted, blocked by static dependencies in runtime services  
 **Tags:** `[Refactor]`, `[TechDebt]`, `[StartupConfiguration]`, `[EmailPipeline]`
+
+---
+
+#### 🔐 Planned Infrastructure Enhancements (v1.1+)
+
+**Rate Limiting Middleware**
+
+Introduce request rate limiting to prevent abuse and allow for eventual SaaS-ready controls.
+
+**Why It's Needed:**  
+- Protect the API from being overwhelmed by bad actors or runaway clients  
+- Enable future tenant-specific quotas or developer plans  
+- Improve resilience and uptime under load  
+
+**Implementation Options:**  
+- Use `AspNetCoreRateLimit` NuGet package for IP-based throttling  
+- Consider policy-based limits (per route, per key, etc.)  
+- Future enhancement: tie into API key system when multi-tenant
+
+**Tasks:**  
+- [ ] Add NuGet package and base configuration for IP/route limiting  
+- [ ] Integrate into ASP.NET middleware pipeline  
+- [ ] Expose `/api/status/limits` (optional, debug-use)  
+- [ ] Document usage and customization in AdminDocs  
+
+**Target Release:** `v1.1`  
+**Status:** 🧭 Planned  
+**Tags:** `[Security]`, `[Middleware]`, `[Scalability]`, `[RateLimiting]`
+
+
 
 ---
 
