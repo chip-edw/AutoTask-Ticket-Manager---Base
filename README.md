@@ -1,4 +1,5 @@
 ﻿# ATTMS: AutoTask Ticket Manager Service & Lightweight ITSM Platform
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ---
 
@@ -161,10 +162,27 @@ offering companies a flexible, low-cost enhancement to their existing systems.
 
 ## 📜 License
 
-Planned for **MIT License** upon open-source release.  
-Commercial consulting, deployment, and plugin customization services may be available separately.
+ATTMS is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+You are free to:
+
+- Use, modify, and deploy this software
+- Share changes, provided you also share your source code under the same license
+- Run ATTMS internally or on a public server
+
+You may **not**:
+
+- Re-license or sell the software without also open-sourcing your modifications
+- Use this code in proprietary software without obtaining a separate commercial license
+
+For full license terms, see the [LICENSE](./LICENSE) file.
 
 ---
+
+💼 **Need help customizing or deploying ATTMS?**  
+I offer consulting services and implementation support.  
+Reach out at [chip@chip-edwards.com](mailto:chip@chip-edwards.com).
+
 
 # 📚 Documentation
 
