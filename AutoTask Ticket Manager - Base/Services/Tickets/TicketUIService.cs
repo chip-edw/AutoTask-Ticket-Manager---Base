@@ -125,6 +125,96 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
         }
 
 
+        public async Task<TicketUI?> CreateTicketAsync(TicketCreateDto newTicket)
+        {
+            var payload = new
+            {
+                title = newTicket.Title,
+                description = newTicket.Description,
+                status = newTicket.StatusId,
+                queueID = newTicket.QueueId,
+                priority = newTicket.PriorityId,
+                assignedResourceID = newTicket.AssignedResourceId
+            };
+
+            var response = await _apiClient.PostAsync("/Tickets", payload);
+
+            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+            {
+                Log.Warning($"[TicketUIService] Failed to create ticket: {response.StatusCode} - {response.Content}");
+                return null;
+            }
+
+            try
+            {
+                var json = JObject.Parse(response.Content);
+                var ticketId = json.Value<long?>("id") ?? 0;
+
+                return new TicketUI
+                {
+                    Id = ticketId,
+                    TicketNumber = json.Value<string>("ticketNumber") ?? "",
+                    Title = json.Value<string>("title") ?? "",
+                    Status = MapPicklistLabel("status", json.Value<string>("status")),
+                    Priority = MapPicklistLabel("priority", json.Value<string>("priority")),
+                    QueueName = MapPicklistLabel("queueID", json.Value<string>("queueID")),
+                    CompanyName = $"CompanyID: {json.Value<long?>("companyID") ?? 0}",
+                    CreatedDate = json.Value<DateTime?>("createDate") ?? DateTime.MinValue,
+                    LastUpdated = json.Value<DateTime?>("lastActivityDate") ?? DateTime.MinValue
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[TicketUIService] Error parsing created ticket response");
+                return null;
+            }
+        }
+
+        public async Task<TicketUI?> UpdateTicketAsync(long ticketId, TicketUpdateDto updatedTicket)
+        {
+            var payload = new
+            {
+                title = updatedTicket.Title,
+                description = updatedTicket.Description,
+                status = updatedTicket.StatusId,
+                queueID = updatedTicket.QueueId,
+                priority = updatedTicket.PriorityId,
+                assignedResourceID = updatedTicket.AssignedResourceId
+            };
+
+            var response = await _apiClient.PatchAsync($"/Tickets/{ticketId}", payload);
+
+            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+            {
+                Log.Warning($"[TicketUIService] Failed to update ticket {ticketId}: {response.StatusCode} - {response.Content}");
+                return null;
+            }
+
+            try
+            {
+                var json = JObject.Parse(response.Content);
+
+                return new TicketUI
+                {
+                    Id = ticketId,
+                    TicketNumber = json.Value<string>("ticketNumber") ?? "",
+                    Title = json.Value<string>("title") ?? "",
+                    Status = MapPicklistLabel("status", json.Value<string>("status")),
+                    Priority = MapPicklistLabel("priority", json.Value<string>("priority")),
+                    QueueName = MapPicklistLabel("queueID", json.Value<string>("queueID")),
+                    CompanyName = $"CompanyID: {json.Value<long?>("companyID") ?? 0}",
+                    CreatedDate = json.Value<DateTime?>("createDate") ?? DateTime.MinValue,
+                    LastUpdated = json.Value<DateTime?>("lastActivityDate") ?? DateTime.MinValue
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[TicketUIService] Error parsing updated ticket response");
+                return null;
+            }
+        }
+
+
 
         private static string MapPicklistLabel(string field, string? value)
         {

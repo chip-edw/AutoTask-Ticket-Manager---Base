@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTickets } from './useTickets';
-import FiltersBar from '../../components/FiltersBar'; // Adjust path if needed based on your structure
+import FiltersBar from '@/components/FiltersBar'; // Adjust path if needed based on your structure
 
 const TicketTable = () => {
   const location = useLocation();

@@ -1,6 +1,6 @@
-// src/tickets/TicketDetail.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import api from '@/utils/api';
 
 const TicketDetail = () => {
   const { ticketNumber } = useParams();
@@ -11,14 +11,10 @@ const TicketDetail = () => {
   useEffect(() => {
     const fetchTicket = async () => {
       try {
-        const res = await fetch(`/api/v1/tickets/${ticketNumber}`);
-        if (!res.ok) {
-          throw new Error(`Ticket ${ticketNumber} not found.`);
-        }
-        const data = await res.json();
-        setTicket(data);
+        const res = await api.get(`/tickets/${ticketNumber}`);
+        setTicket(res.data);
       } catch (err) {
-        setError(err.message);
+        setError(`Ticket ${ticketNumber} not found.`);
       } finally {
         setLoading(false);
       }
@@ -26,6 +22,7 @@ const TicketDetail = () => {
 
     fetchTicket();
   }, [ticketNumber]);
+
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
@@ -37,7 +34,7 @@ const TicketDetail = () => {
       <div><strong>Description:</strong> {ticket.description}</div>
       <div><strong>Status:</strong> {ticket.status}</div>
       <div><strong>Priority:</strong> {ticket.priority}</div>
-      <div><strong>Queue:</strong> {ticket.queue}</div>
+      <div><strong>Queue:</strong> {ticket.queueName}</div>
       <div><strong>Company:</strong> {ticket.companyName}</div>
       <div><strong>Created:</strong> {new Date(ticket.createdDate).toLocaleString()}</div>
     </div>

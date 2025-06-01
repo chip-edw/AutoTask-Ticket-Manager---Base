@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '@/utils/api';
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const apiBase = '/api/v1/maintenance';
+const apiBase = '/maintenance';
 
 export default function ExclusionPanel({ title, type }) {
   const [exclusions, setExclusions] = useState([]);
@@ -25,7 +25,7 @@ export default function ExclusionPanel({ title, type }) {
 
   const fetchExclusions = useCallback(async () => {
     try {
-      const response = await axios.get(endpoint);
+      const response = await api.get(endpoint);
       setExclusions(response.data);
     } catch (error) {
       console.error('Failed to fetch exclusions:', error);
@@ -35,7 +35,7 @@ export default function ExclusionPanel({ title, type }) {
 
   const reloadExclusions = async () => {
     try {
-      await axios.post(`${apiBase}/reload`, { reloadExclusions: true });
+      await api.post(`${apiBase}/reload`, { reloadExclusions: true });
     } catch (error) {
       console.error('Failed to reload memory exclusions:', error);
       showSnackbar('Changes saved, but reload failed.', 'warning');
@@ -57,7 +57,7 @@ export default function ExclusionPanel({ title, type }) {
         ? { email: newEntry }
         : { keyword: newEntry };
 
-      await axios.post(endpoint, payload);
+      await api.post(endpoint, payload);
       setNewEntry('');
       await fetchExclusions();
       await reloadExclusions();
@@ -70,7 +70,7 @@ export default function ExclusionPanel({ title, type }) {
 
   const deleteExclusion = async (id) => {
     try {
-      await axios.delete(`${endpoint}/${id}`);
+      await api.delete(`${endpoint}/${id}`);
       await fetchExclusions();
       await reloadExclusions();
       showSnackbar('Exclusion removed and memory reloaded.');

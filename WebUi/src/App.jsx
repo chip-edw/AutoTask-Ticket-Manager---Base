@@ -1,6 +1,10 @@
 import TicketPanel from './pages/tickets/TicketPanel';
 import TicketTable from './pages/tickets/TicketTable';
 import TicketDetail from './pages/tickets/TicketDetail';
+import EditTicketForm from './pages/tickets/EditTicketForm';
+import NewTicketForm from './pages/tickets/NewTicketForm';
+import TicketDashboard from './pages/tickets/TicketDashboard';
+
 import ColorTestPage from './pages/ColorTestPage';
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -49,18 +53,15 @@ function App() {
               </PrivateRoute>
             } />
 
-            <Route path="/tickets/open" element={
-              <PrivateRoute>
-                <TicketList />
-              </PrivateRoute>
-            } />
-
             <Route path="/tickets" element={<TicketPanel />}>
-              <Route index element={<TicketTable />} />
-              {<Route path=":ticketNumber" element={<TicketDetail />} />}
-              {/* Future options: */}
-              {/* <Route path="closed" element={<ClosedTicketTable />} /> */}              
+              <Route index element={<TicketDashboard />} /> {/* This shows on /tickets */}
+              <Route path="open" element={<TicketTable />} />  {/* This is for /tickets/open */}
+              <Route path="new" element={<NewTicketForm />} />
+              <Route path=":ticketNumber" element={<TicketDetail />} />
+              <Route path=":ticketNumber/edit" element={<EditTicketForm />} />
             </Route>
+
+
 
             <Route path="/color-test" element={<ColorTestPage />} />
 

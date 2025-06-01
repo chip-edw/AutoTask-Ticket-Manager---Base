@@ -1,12 +1,24 @@
-import { Link } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Collapse
+} from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import { useState } from 'react';
 
 const Sidebar = () => {
   const role = localStorage.getItem('role');
+  const navigate = useNavigate();
+  const [ticketOpen, setTicketOpen] = useState(true);
+
+  const handleTicketClick = () => {
+    setTicketOpen(!ticketOpen);
+    navigate('/tickets'); // Navigate to TicketDashboard
+  };
 
   return (
     <Drawer variant="permanent" anchor="left">
@@ -19,15 +31,33 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
 
+        {/* Ticket Section */}
         <ListItem disablePadding>
-          <Link to="/tickets" style={{ textDecoration: 'none', width: '100%' }}>
-            <ListItemButton onClick={() => console.log("Sidebar link clicked")}>
-              <ListItemIcon><AssignmentIcon /></ListItemIcon>
-              <ListItemText primary="Tickets" />
-            </ListItemButton>
-          </Link>
+          <ListItemButton onClick={handleTicketClick}>
+            <ListItemIcon><AssignmentIcon /></ListItemIcon>
+            <ListItemText primary="Tickets" />
+            {ticketOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
         </ListItem>
-
+        <Collapse in={ticketOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/tickets/open" sx={{ pl: 4 }}>
+                <ListItemText primary="Open Tickets" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/tickets/new" sx={{ pl: 4 }}>
+                <ListItemText primary="Create Ticket" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/tickets/closed" sx={{ pl: 4 }}>
+                <ListItemText primary="Closed Tickets" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
 
         <ListItem disablePadding>
           <ListItemButton component={Link} to="/crm/accounts">
@@ -36,7 +66,6 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
 
-        {/* Admin-only links */}
         {role === 'admin' && (
           <>
             <ListItem disablePadding>

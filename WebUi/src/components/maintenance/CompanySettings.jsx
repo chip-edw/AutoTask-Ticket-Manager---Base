@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
+import api from '@/utils/api';
 
 const CompanySettings = () => {
   console.log("✅ CompanySettings component is mounted");
@@ -43,7 +43,7 @@ const CompanySettings = () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const res = await axios.get('/api/v1/maintenance/companysettings');
+      const res = await api.get('/maintenance/companysettings');
       console.log("📦 Company data loaded:", res.data);
       setCompanies(res.data);
     } catch (error) {
@@ -60,7 +60,7 @@ const CompanySettings = () => {
     const updates = companies.filter((c) => dirtyRows.includes(c.autotaskId));
     console.log("💾 Saving rows:", updates); // 🔍 Add this
     try {
-      await axios.put('/api/v1/maintenance/companysettings/update', updates);
+      await api.put('/maintenance/companysettings/update', updates);
       setSnackbar({ open: true, message: '✅ Company settings saved' });
       setDirtyRows([]);
       await refreshMemory();
@@ -86,7 +86,7 @@ const CompanySettings = () => {
 
   const refreshMemory = async () => {
     try {
-      await axios.post('/api/v1/maintenance/companysettings/refreshcompanymemory');
+      await api.post('/maintenance/companysettings/refreshcompanymemory');
       setSnackbar({ open: true, message: '🔁 Memory refreshed' });
     } catch (error) {
       console.error('❌ Memory refresh failed:', error);

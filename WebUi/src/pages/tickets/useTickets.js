@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from '@/utils/api';
 
 export const useTickets = (trigger) => {
   const [tickets, setTickets] = useState([]);
@@ -8,10 +9,8 @@ export const useTickets = (trigger) => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await fetch('/api/v1/tickets');
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
-        const data = await response.json();
-        setTickets(data);
+        const response = await api.get('/tickets');
+        setTickets(response.data); // ✅ Use .data directly with axios
       } catch (err) {
         setError(err.message || 'Unknown error');
       } finally {
@@ -20,7 +19,7 @@ export const useTickets = (trigger) => {
     };
 
     fetchTickets();
-  }, [trigger]); // ✅ This re-runs when location.pathname changes
+  }, [trigger]);
 
   return { tickets, loading, error };
 };

@@ -18,5 +18,20 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
         /// <param name="ticketNumber">The user-facing ticket number</param>
         /// <returns>TicketUI DTO or null if not found</returns>
         Task<TicketUI?> GetTicketByNumberAsync(string ticketNumber);
+
+        /// <summary>
+        /// Creates a new ticket in AutoTask with the provided details.
+        /// </summary>
+        /// <param name="newTicket">The ticket details to create</param>
+        /// <returns>The created TicketUI DTO, or null if creation failed</returns>
+        Task<TicketUI?> CreateTicketAsync(TicketCreateDto newTicket);
+
+        /// <summary>
+        /// Updates an existing ticket in AutoTask with the specified changes.
+        /// </summary>
+        /// <param name="ticketId">The internal AutoTask ticket ID</param>
+        /// <param name="updatedTicket">The updated ticket field values</param>
+        /// <returns>The updated TicketUI DTO, or null if the update failed</returns>
+        Task<TicketUI?> UpdateTicketAsync(long ticketId, TicketUpdateDto updatedTicket);
     }
 }

@@ -1,6 +1,6 @@
-# ATTMS AdminUI
+# ATTMS WebUI
 
-AdminUI is the lightweight, extensible front-end management portal for the AutoTask Ticket Manager Service (ATTMS) platform.
+WebUI is the lightweight, extensible front-end management portal for the AutoTask Ticket Manager Service (ATTMS) platform.
 
 Built using [React](https://react.dev/), [Vite](https://vitejs.dev/), and [Material-UI (MUI)](https://mui.com/), AdminUI provides a fast, simple, cross-platform interface to interact with ATTMS backend services.
 
@@ -77,6 +77,37 @@ These files can later be served locally via the ATTMS Maintenance API.
   - Add pagination, filtering, and search functionality
   - Enhance error handling and session management
   - Implement localStorage-based session persistence
+
+## 🛠️ Environment Variables
+
+To enable dynamic configuration across environments (development, production, etc.), the ATTMS WebUI uses the following environment variable:
+
+```
+VITE_API_BASE_URL=http://localhost:60050
+```
+
+### Where to Define It
+
+Create a `.env.local` file in the root of your WebUI project and add the variable there:
+
+```
+# .env.local
+VITE_API_BASE_URL=http://localhost:60050
+```
+
+⚠️ **Important:** All environment variables intended for use in the frontend **must start with** `VITE_` to be exposed to your React app when using Vite.
+
+🔒 **Best Practice:** Add `.env.local` to your `.gitignore` to prevent accidentally committing environment-specific values to version control.
+
+---
+
+### Example `.gitignore` entry
+
+```
+# Local environment config
+.env.local
+```
+
 
 ## 📄 License
 
