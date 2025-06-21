@@ -7,6 +7,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
         Task<RestResponse> GetAsync(string resource);
         Task<RestResponse> PostAsync(string resource, object body);
         Task<RestResponse> PatchAsync(string resource, object body);
+        Task<RestResponse> PutAsync(string resource, object body);
         Task<RestResponse> DeleteAsync(string resource);
     }
 }

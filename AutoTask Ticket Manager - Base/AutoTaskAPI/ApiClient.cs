@@ -55,6 +55,13 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
             return await _client.ExecuteAsync(request);
         }
 
+        public async Task<RestResponse> PutAsync(string resource, object body)
+        {
+            var request = new RestRequest(resource, Method.Put);
+            request.AddJsonBody(body);
+            return await _client.ExecuteAsync(request);
+        }
+
         public async Task<RestResponse> DeleteAsync(string resource)
         {
             var request = new RestRequest(resource, Method.Delete);

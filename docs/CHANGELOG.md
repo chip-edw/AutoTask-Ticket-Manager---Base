@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented here.
 
+## [1.1.0-beta] - 2025-06-21
+### Added - MAJOR MILESTONE: Complete Ticket CRUD System
+- **Full Ticket Management WebUI**: Complete React-based interface for ticket operations
+- **Ticket CRUD API**: RESTful endpoints at `/api/v1/tickets/*` with full AutoTask integration
+  - `GET /api/v1/tickets` - Paginated ticket listing with filtering
+  - `GET /api/v1/tickets/{ticketNumber}` - Individual ticket retrieval
+  - `POST /api/v1/tickets` - Create new tickets with validation
+  - `PATCH /api/v1/tickets/{ticketId}` - Efficient partial ticket updates
+  - `GET /api/v1/tickets/metadata` - Real-time AutoTask picklist data
+- **AutoTask Integration**: Real-time metadata loading for statuses, queues, and priorities
+- **Edit Ticket Form**: Complete edit functionality with AutoTask picklist integration
+- **Ticket Listing**: Material-UI DataGrid with sortable columns and company name resolution
+- **PATCH-based Updates**: Efficient partial updates sending only changed fields to AutoTask
+- **Error Handling**: Comprehensive error handling and logging throughout the ticket system
+
+### Technical Improvements
+- Implemented `ITicketUIService` with full async/await pattern
+- Added `TicketCreateDto`, `TicketUpdateDto`, and `TicketMetadataDto` for clean API contracts
+- Real-time picklist conversion from AutoTask JObject arrays to frontend-friendly options
+- In-memory company name resolution using `Companies.companies` cache
+- Proper HTTP status codes (200, 201, 404, 500) with meaningful error messages
+
+### In Progress - Current Sprint: BASIC CRUD Completion
+- 🔄 **IN PROGRESS:** Fix Create New Ticket form to use real metadata (remove hardcoded values)
+- 🔄 **IN PROGRESS:** Add AutoTask Resources to backend metadata endpoint
+- 🔄 **IN PROGRESS:** Add Resource assignment dropdown to Create and Edit forms
+						
 ## [1.0.4-beta] - 2025-05-04
 ### Added
 - Admin UI: Sender and Subject Exclusions grid (add/delete with reload)

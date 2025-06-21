@@ -2,7 +2,7 @@
 using AutoTaskTicketManager_Base.Dtos.Tickets;
 using AutoTaskTicketManager_Base.Services.Tickets;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 
 namespace AutoTaskTicketManager_Base.Controllers.Tickets
@@ -83,7 +83,7 @@ namespace AutoTaskTicketManager_Base.Controllers.Tickets
 
         #endregion
 
-        #region POST: /api/v1/tickets
+        #region POST: /api/v1/tickets  New Ticket
         /// <summary>
         /// Creates a new ticket in AutoTask with the specified details.
         /// </summary>
@@ -109,7 +109,7 @@ namespace AutoTaskTicketManager_Base.Controllers.Tickets
         }
         #endregion
 
-        #region PATCH: /api/v1/tickets/{ticketId}
+        #region Patch: /api/v1/tickets/{ticketId}  Update ticket
         /// <summary>
         /// Updates an existing ticket in AutoTask with the provided field changes.
         /// </summary>
@@ -124,6 +124,8 @@ namespace AutoTaskTicketManager_Base.Controllers.Tickets
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            updatedTicket.Id ??= ticketId;
 
             try
             {
@@ -155,39 +157,10 @@ namespace AutoTaskTicketManager_Base.Controllers.Tickets
             {
                 var metadata = new TicketMetadataDto
                 {
-                    Statuses = ((IEnumerable<object>)Ticket.GetPickLists("status"))
-                        .Select(p => JsonConvert.DeserializeObject<Dictionary<string, string>>(p.ToString()))
-                        .Where(dict => dict != null && dict.ContainsKey("value") && dict.ContainsKey("label"))
-                        .Select(dict => new PicklistOptionDto
-                        {
-                            Value = dict["value"],
-                            Label = dict["label"]
-                        }).ToList(),
-
-                    Queues = ((IEnumerable<object>)Ticket.GetPickLists("queueID"))
-                        .Select(p => JsonConvert.DeserializeObject<Dictionary<string, string>>(p.ToString()))
-                        .Where(dict => dict != null && dict.ContainsKey("value") && dict.ContainsKey("label"))
-                        .Select(dict => new PicklistOptionDto
-                        {
-                            Value = dict["value"],
-                            Label = dict["label"]
-                        }).ToList(),
-
-                    Priorities = ((IEnumerable<object>)Ticket.GetPickLists("priority"))
-                        .Select(p => JsonConvert.DeserializeObject<Dictionary<string, string>>(p.ToString()))
-                        .Where(dict => dict != null && dict.ContainsKey("value") && dict.ContainsKey("label"))
-                        .Select(dict => new PicklistOptionDto
-                        {
-                            Value = dict["value"],
-                            Label = dict["label"]
-                        }).ToList(),
-
-                    Resources = Companies.companies
-                        .Select(kvp => new PicklistOptionDto
-                        {
-                            Value = kvp.Key.ToString(),
-                            Label = kvp.Value.FirstOrDefault()?.ToString() ?? $"ResourceID: {kvp.Key}"
-                        }).ToList()
+                    Statuses = GetPicklistFromDictionary("status"),
+                    Queues = GetPicklistFromDictionary("queueID"),
+                    Priorities = GetPicklistFromDictionary("priority"),
+                    Resources = GetResourceOptions()
                 };
 
                 return Ok(metadata);
@@ -198,7 +171,99 @@ namespace AutoTaskTicketManager_Base.Controllers.Tickets
                 return StatusCode(500, "Failed to load ticket metadata");
             }
         }
+
         #endregion
 
+        #region Picklists Helper methods for ticket metadata endpoint
+
+        /// <summary>
+        /// Get picklist options directly from the Ticket.pickLists dictionary
+        /// </summary>
+        /// <summary>
+        /// Get picklist options directly from the Ticket.pickLists dictionary
+        /// </summary>
+        /// <summary>
+        /// Get picklist options directly from the Ticket.pickLists dictionary
+        /// </summary>
+        private List<PicklistOptionDto> GetPicklistFromDictionary(string fieldName)
+        {
+            try
+            {
+                var options = new List<PicklistOptionDto>();
+
+                if (Ticket.pickLists.ContainsKey(fieldName))
+                {
+                    var picklistArray = Ticket.pickLists[fieldName];
+
+                    Log.Debug("Found {FieldName} picklist with {Count} items", fieldName, picklistArray.Length);
+
+                    foreach (var item in picklistArray)
+                    {
+                        if (item is JObject jObject)
+                        {
+                            // Extract value and label from JObject
+                            var value = jObject["value"]?.ToString();
+                            var label = jObject["label"]?.ToString();
+
+                            if (!string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(label))
+                            {
+                                options.Add(new PicklistOptionDto
+                                {
+                                    Value = value,
+                                    Label = label
+                                });
+                            }
+                            else
+                            {
+                                // Debug: log what properties the JObject actually has
+                                Log.Debug("JObject properties: {Properties}", string.Join(", ", jObject.Properties().Select(p => p.Name)));
+                                Log.Debug("JObject content: {Content}", jObject.ToString());
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Warning("Picklist {FieldName} not found in dictionary. Available keys: {Keys}",
+                        fieldName, string.Join(", ", Ticket.pickLists.Keys));
+                }
+
+                Log.Debug("Converted {Count} options for {FieldName}", options.Count, fieldName);
+                return options;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error accessing picklist dictionary for {FieldName}", fieldName);
+                return new List<PicklistOptionDto>();
+            }
+        }
+
+        /// <summary>
+        /// Get AutoTask resources for assignment dropdown
+        /// </summary>
+        private List<PicklistOptionDto> GetResourceOptions()
+        {
+            try
+            {
+                // This depends on your actual resource structure
+                // Replace with your actual resource loading logic
+                var options = new List<PicklistOptionDto>
+        {
+            new PicklistOptionDto { Value = "", Label = "Unassigned" }
+        };
+
+                // Add logic to load from AutoTask resources
+                // Example: var resources = AutotaskAPIGet.GetAutoTaskActiveResources();
+
+                return options;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error getting resource options");
+                return new List<PicklistOptionDto>();
+            }
+        }
+
+        #endregion
     }
 }

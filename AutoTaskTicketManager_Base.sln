@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{1E566C49-F
 		docs\CHANGELOG.md = docs\CHANGELOG.md
 		docs\Email-Processing.md = docs\Email-Processing.md
 		docs\INTERNALROADMAP.md = docs\INTERNALROADMAP.md
+		LICENSE = LICENSE
+		README.md = README.md
 		docs\ROADMAP.md = docs\ROADMAP.md
 		docs\dev\tailwind.md = docs\dev\tailwind.md
 	EndProjectSection

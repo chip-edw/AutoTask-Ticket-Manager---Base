@@ -86,14 +86,13 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
         },
                 includeFields = new[]
                 {
-            "id", "ticketNumber", "title", "status", "priority",
+            "id", "ticketNumber", "title", "description", "status", "priority",
             "queueID", "companyID", "createDate", "lastActivityDate"
         },
                 maxRecords = 1
             };
 
             var response = await _apiClient.PostAsync("/Tickets/query", query);
-
             if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
             {
                 Log.Warning($"[TicketUIService] Failed to retrieve ticket #{ticketNumber}: {response.StatusCode}");
@@ -105,20 +104,18 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
             if (item == null) return null;
 
             var companyId = item.Value<long?>("companyID") ?? 0;
-
             return new TicketUI
             {
                 Id = item.Value<long?>("id") ?? 0,
                 TicketNumber = item.Value<string>("ticketNumber") ?? "",
                 Title = item.Value<string>("title") ?? "",
+                Description = item.Value<string>("description") ?? "",
                 Status = MapPicklistLabel("status", item.Value<string>("status")),
                 Priority = MapPicklistLabel("priority", item.Value<string>("priority")),
                 QueueName = MapPicklistLabel("queueID", item.Value<string>("queueID")),
-
                 CompanyName = Companies.companies.TryGetValue(companyId, out var values) && values.Length > 0
                     ? values[0]?.ToString() ?? $"CompanyID: {companyId}"
                     : $"CompanyID: {companyId}",
-
                 CreatedDate = item.Value<DateTime?>("createDate") ?? DateTime.MinValue,
                 LastUpdated = item.Value<DateTime?>("lastActivityDate") ?? DateTime.MinValue
             };
@@ -172,17 +169,33 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
 
         public async Task<TicketUI?> UpdateTicketAsync(long ticketId, TicketUpdateDto updatedTicket)
         {
-            var payload = new
-            {
-                title = updatedTicket.Title,
-                description = updatedTicket.Description,
-                status = updatedTicket.StatusId,
-                queueID = updatedTicket.QueueId,
-                priority = updatedTicket.PriorityId,
-                assignedResourceID = updatedTicket.AssignedResourceId
-            };
+            // Build payload with only non-null fields (only what changed)
+            var payload = new Dictionary<string, object> { { "id", ticketId } };
 
-            var response = await _apiClient.PatchAsync($"/Tickets/{ticketId}", payload);
+            if (!string.IsNullOrWhiteSpace(updatedTicket.Title))
+                payload.Add("title", updatedTicket.Title);
+
+            if (!string.IsNullOrWhiteSpace(updatedTicket.Description))
+                payload.Add("description", updatedTicket.Description);
+
+            if (updatedTicket.StatusId.HasValue)
+                payload.Add("status", updatedTicket.StatusId.Value);
+
+            if (updatedTicket.QueueId.HasValue)
+                payload.Add("queueID", updatedTicket.QueueId.Value);
+
+            if (updatedTicket.PriorityId.HasValue)
+                payload.Add("priority", updatedTicket.PriorityId.Value);
+
+            if (updatedTicket.AssignedResourceId.HasValue)
+                payload.Add("assignedResourceID", updatedTicket.AssignedResourceId.Value);
+
+            if (updatedTicket.CompanyId.HasValue)
+                payload.Add("companyID", updatedTicket.CompanyId.Value);
+
+            Log.Debug("Sending payload to AutoTask: {@Payload}", payload);
+
+            var response = await _apiClient.PatchAsync($"/Tickets", payload);
 
             if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
             {
@@ -193,7 +206,6 @@ namespace AutoTaskTicketManager_Base.Services.Tickets
             try
             {
                 var json = JObject.Parse(response.Content);
-
                 return new TicketUI
                 {
                     Id = ticketId,

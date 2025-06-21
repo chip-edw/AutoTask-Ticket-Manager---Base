@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TextField, Button, MenuItem, Box, Typography } from '@mui/material';
 import api from '@/utils/api';
+import { useNavigate } from 'react-router-dom';
+
 
 const NewTicketForm = () => {
   const [form, setForm] = useState({
@@ -17,21 +19,23 @@ const NewTicketForm = () => {
   const [success, setSuccess] = useState('');
 
   // Optional: Load picklists here from API if available
-  const [statuses, setStatuses] = useState([
+  const [statuses] = useState([
     { value: '1', label: 'New' },
     { value: '2', label: 'In Progress' },
     { value: '5', label: 'Complete' }
   ]);
-  const [queues, setQueues] = useState([
+  const navigate = useNavigate();
+
+  const [queues] = useState([
     { value: '1', label: 'Support' },
     { value: '2', label: 'Development' }
   ]);
-  const [priorities, setPriorities] = useState([
+  const [priorities] = useState([
     { value: '1', label: 'Low' },
     { value: '2', label: 'Medium' },
     { value: '3', label: 'High' }
   ]);
-  const [resources, setResources] = useState([
+  const [resources] = useState([
     { value: '123', label: 'John Doe' },
     { value: '456', label: 'Jane Smith' }
   ]);
@@ -46,20 +50,20 @@ const NewTicketForm = () => {
     setError('');
     setSuccess('');
 
-    try {
+  try 
+    {
       const response = await api.post('/tickets', form);
-      setSuccess(`Ticket created: #${response.data.ticketNumber}`);
-      setForm({
-        title: '',
-        description: '',
-        statusId: '',
-        queueId: '',
-        priorityId: '',
-        assignedResourceId: ''
-      });
-    } catch (err) {
-      setError('Failed to create ticket.');
-    } finally {
+      const ticketNumber = response.data.ticketNumber;
+      setSuccess(`Ticket created: #${ticketNumber}`);
+      navigate(`/tickets/${ticketNumber}`);
+    } 
+  catch (err) 
+    {
+      const message = err?.response?.data?.message || 'Failed to create ticket.';
+      setError(message);
+    } 
+  finally 
+    {
       setSaving(false);
     }
   };
