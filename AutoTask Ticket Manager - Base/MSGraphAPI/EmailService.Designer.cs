@@ -12,7 +12,7 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.8.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.14.0.0")]
     internal sealed partial class EmailService : global::System.Configuration.ApplicationSettingsBase {
         
         private static EmailService defaultInstance = ((EmailService)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new EmailService())));
@@ -31,39 +31,39 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI {
             "><span\r\n      lang=EN-US style=\'mso-ansi-language:EN-US\'><o:p></o:p></span></u><" +
             "/p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:EN-US\'" +
             "><o:p>&nbsp;</o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style" +
-            "=\'color:black;mso-ansi-language:EN-US\'>Thank\r\n      you for contacting the Flint" +
-            "fox Support Team. We have logged your request for\r\n      support as Ticket {1}.&" +
-            "nbsp;We will use this number to track your support request and as a\r\n      refer" +
-            "ence for all communications with you. We will be in touch as we work\r\n      towa" +
-            "rds a resolution for you.<o:p></o:p></span></p>\r\n\r\n      <p class=MsoNormal><spa" +
-            "n lang=EN-US style=\'color:black;mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span" +
-            "></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'color:black;mso-ansi-l" +
-            "anguage:EN-US\'>By registering your ticket you\r\n      acknowledge that you are au" +
-            "thorizing Flintfox to spend up to 8 hours of time\r\n      working it</span>,<span" +
-            " style=\'color:black\'> noting that if it is determined to\r\n      be a defect you " +
-            "will not be billed for the effort to resolve. &nbsp;If further\r\n      hours are " +
-            "required we will reach out to you again seeking additional approval\r\n      by re" +
-            "turn email, at which time we hope to have an estimate of the total effort\r\n     " +
-            " to resolve.<o:p></o:p></span></span></p>\r\n\r\n      <p class=MsoNormal><span lang" +
-            "=EN-US style=\'color:#1F497D;mso-ansi-language:\r\n      EN-US\'><o:p>&nbsp;</o:p></" +
-            "span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:" +
-            "EN-US\'>If you have\r\n      any questions about this ticket, please reply by retur" +
-            "n email or via your <a\r\n      href=\"https://ffportal.azurewebsites.net/\">Flintfo" +
-            "x Portal</a>\r\n      where we will endeavor to answer your query as quickly as po" +
-            "ssible. <o:p></o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US styl" +
-            "e=\'mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span></p>\r\n\r\n      <p class=MsoNo" +
-            "rmal><span lang=EN-US style=\'mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span></" +
-            "p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:EN-US\'>" +
-            "Thank you\r\n      for your patience and support.<o:p></o:p></span></p>\r\n\r\n      <" +
-            "p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:EN-US\'><o:p>&nbsp;</" +
+            "=\'color:black;mso-ansi-language:EN-US\'>Thank\r\n      you for contacting the Suppo" +
+            "rt Team. We have logged your request for\r\n      support as Ticket {1}.&nbsp;We w" +
+            "ill use this number to track your support request and as a\r\n      reference for " +
+            "all communications with you. We will be in touch as we work\r\n      towards a res" +
+            "olution for you.<o:p></o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN" +
+            "-US style=\'color:black;mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span></p>\r\n\r\n" +
+            "      <p class=MsoNormal><span lang=EN-US style=\'color:black;mso-ansi-language:E" +
+            "N-US\'>By registering your ticket you\r\n      acknowledge that you are authorizing" +
+            " the Support Team to spend up to 8 hours of time\r\n      working it</span>,<span " +
+            "style=\'color:black\'> noting that if it is determined to\r\n      be a defect you w" +
+            "ill not be billed for the effort to resolve. &nbsp;If further\r\n      hours are r" +
+            "equired we will reach out to you again seeking additional approval\r\n      by ret" +
+            "urn email, at which time we hope to have an estimate of the total effort\r\n      " +
+            "to resolve.<o:p></o:p></span></span></p>\r\n\r\n      <p class=MsoNormal><span lang=" +
+            "EN-US style=\'color:#1F497D;mso-ansi-language:\r\n      EN-US\'><o:p>&nbsp;</o:p></s" +
+            "pan></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:E" +
+            "N-US\'>If you have\r\n      any questions about this ticket, please reply by return" +
+            " email or via your <a\r\n      href=\"https://portal.portal/\">Support Portal</a>\r\n " +
+            "     where we will endeavor to answer your query as quickly as possible. <o:p></" +
             "o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-lan" +
-            "guage:EN-US\'>Regards,<o:p></o:p></span></p>\r\n\r\n      <p class=MsoNormal><span la" +
-            "ng=EN-US style=\'mso-ansi-language:EN-US\'>Flintfox\r\n      Support Team<o:p></o:p>" +
-            "</span></p>\r\n\r\n      <p class=MsoNormal><span style=\'font-size:10.0pt;font-famil" +
-            "y:\"Segoe UI\",sans-serif;\r\n      mso-fareast-language:EN-US\'><o:p>&nbsp;</o:p></s" +
-            "pan></p>\r\n\r\n      <p class=MsoNormal><span style=\'font-size:12.0pt;font-family:\"" +
-            "Times New Roman\",serif;\r\n      mso-fareast-font-family:\"Times New Roman\"\'><o:p>&" +
-            "nbsp;</o:p></span></p>")]
+            "guage:EN-US\'><o:p>&nbsp;</o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang" +
+            "=EN-US style=\'mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span></p>\r\n\r\n      <p " +
+            "class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:EN-US\'>Thank you\r\n    " +
+            "  for your patience and support.<o:p></o:p></span></p>\r\n\r\n      <p class=MsoNorm" +
+            "al><span lang=EN-US style=\'mso-ansi-language:EN-US\'><o:p>&nbsp;</o:p></span></p>" +
+            "\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=\'mso-ansi-language:EN-US\'>Re" +
+            "gards,<o:p></o:p></span></p>\r\n\r\n      <p class=MsoNormal><span lang=EN-US style=" +
+            "\'mso-ansi-language:EN-US\'>The\r\n      Support Team<o:p></o:p></span></p>\r\n\r\n     " +
+            " <p class=MsoNormal><span style=\'font-size:10.0pt;font-family:\"Segoe UI\",sans-se" +
+            "rif;\r\n      mso-fareast-language:EN-US\'><o:p>&nbsp;</o:p></span></p>\r\n\r\n      <p" +
+            " class=MsoNormal><span style=\'font-size:12.0pt;font-family:\"Times New Roman\",ser" +
+            "if;\r\n      mso-fareast-font-family:\"Times New Roman\"\'><o:p>&nbsp;</o:p></span></" +
+            "p>")]
         public string HtmlMessageText {
             get {
                 return ((string)(this["HtmlMessageText"]));
@@ -126,14 +126,14 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(@"Thank you for contacting the Flintfox Support Team. 
+        [global::System.Configuration.DefaultSettingValueAttribute(@"Thank you for contacting the Support Team. 
 We have logged your request for support as Ticket {1}.
 
 We will use this number to track your support request and as a
 reference for all communications with you. We will be in touch as we work
 towards a resolution for you.
 
-By registering your ticket you acknowledge that you are authorizing Flintfox to spend up to 8 hours of time
+By registering your ticket you acknowledge that you are authorizing The Support Team to spend up to 8 hours of time
 working it noting that if it is determined to
 be a defect you will not be billed for the effort to resolve.
 

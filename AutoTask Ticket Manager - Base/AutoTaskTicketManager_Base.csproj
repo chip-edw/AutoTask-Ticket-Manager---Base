@@ -16,17 +16,18 @@
     <ProjectReference Include="..\PluginContracts\PluginContracts.csproj" />
     <ProjectReference Include="..\SchedulingPlugin\SchedulingPlugin.csproj" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <None Remove="Logos\flintech.png" />
-    <None Remove="Logos\flintfox.png" />
+    <None Remove="Logos\logo1.png" />
+    <None Remove="Logos\logo2.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Logos\flintech.png">
+    <Content Include="Logos\logo1.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Logos\flintfox.png">
+	
+	<Content Include="Logos\logo2.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

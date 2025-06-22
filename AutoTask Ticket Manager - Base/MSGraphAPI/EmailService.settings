@@ -13,7 +13,7 @@
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;&lt;o:p&gt;&amp;nbsp;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
 
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='color:black;mso-ansi-language:EN-US'&gt;Thank
-      you for contacting the Flintfox Support Team. We have logged your request for
+      you for contacting the Support Team. We have logged your request for
       support as Ticket {1}.&amp;nbsp;We will use this number to track your support request and as a
       reference for all communications with you. We will be in touch as we work
       towards a resolution for you.&lt;o:p&gt;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
@@ -21,7 +21,7 @@
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='color:black;mso-ansi-language:EN-US'&gt;&lt;o:p&gt;&amp;nbsp;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
 
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='color:black;mso-ansi-language:EN-US'&gt;By registering your ticket you
-      acknowledge that you are authorizing Flintfox to spend up to 8 hours of time
+      acknowledge that you are authorizing the Support Team to spend up to 8 hours of time
       working it&lt;/span&gt;,&lt;span style='color:black'&gt; noting that if it is determined to
       be a defect you will not be billed for the effort to resolve. &amp;nbsp;If further
       hours are required we will reach out to you again seeking additional approval
@@ -33,7 +33,7 @@
 
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;If you have
       any questions about this ticket, please reply by return email or via your &lt;a
-      href="https://ffportal.azurewebsites.net/"&gt;Flintfox Portal&lt;/a&gt;
+      href="https://portal.portal/"&gt;Support Portal&lt;/a&gt;
       where we will endeavor to answer your query as quickly as possible. &lt;o:p&gt;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
 
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;&lt;o:p&gt;&amp;nbsp;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
@@ -47,7 +47,7 @@
 
       &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;Regards,&lt;o:p&gt;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
 
-      &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;Flintfox
+      &lt;p class=MsoNormal&gt;&lt;span lang=EN-US style='mso-ansi-language:EN-US'&gt;The
       Support Team&lt;o:p&gt;&lt;/o:p&gt;&lt;/span&gt;&lt;/p&gt;
 
       &lt;p class=MsoNormal&gt;&lt;span style='font-size:10.0pt;font-family:"Segoe UI",sans-serif;
@@ -156,14 +156,14 @@
 </Value>
     </Setting>
     <Setting Name="TextMessage" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Thank you for contacting the Flintfox Support Team. 
+      <Value Profile="(Default)">Thank you for contacting the Support Team. 
 We have logged your request for support as Ticket {1}.
 
 We will use this number to track your support request and as a
 reference for all communications with you. We will be in touch as we work
 towards a resolution for you.
 
-By registering your ticket you acknowledge that you are authorizing Flintfox to spend up to 8 hours of time
+By registering your ticket you acknowledge that you are authorizing The Support Team to spend up to 8 hours of time
 working it noting that if it is determined to
 be a defect you will not be billed for the effort to resolve.
 

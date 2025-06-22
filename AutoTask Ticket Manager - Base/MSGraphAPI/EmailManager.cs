@@ -504,7 +504,8 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
 
         #region "GetLogo"
         /// <summary>
-        /// Takes the email address from the sender and based on the email domain determines if the logo is for Flintfox or Flintech,
+        /// Takes the email address from the sender and based on the email domain determines if the logo is for entity1 or entity2 as defined in the SQLLite db,
+        /// under SupportEmailNamespace1 or SupportEmailNamespace2
         /// Returns the logo image as a base 64 encoded string.
         /// </summary>
         /// <param name="emailAddress"></param>
@@ -514,9 +515,13 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             // Get OS
             string os = StartupConfiguration.DetermineOS();
 
+            string supportEmailNamespace1 = StartupConfiguration.GetConfig("SupportEmailNamespace1");
+            string escapedNamespace1 = Regex.Escape(supportEmailNamespace1);    // Escape special regex characters            
 
-            //test email address follows delete when done
-            emailAddress = "support-whatever@flintfox.com";
+
+            var supportEmailNamespace2 = StartupConfiguration.GetConfig("SupportEmailNamespace2");
+            string escapedNamespace2 = Regex.Escape(supportEmailNamespace2);    // Escape special regex characters            
+
 
             string logo = string.Empty;
 
@@ -525,30 +530,28 @@ namespace AutoTaskTicketManager_Base.MSGraphAPI
             if (emailAddress != null)
             {
                 emailAddress = emailAddress.ToLower();
-                string pattern = "\\bflintfox.com";
+                string pattern = $@"\b[A-Za-z0-9._%+-]+{escapedNamespace1}\b";  // Build the pattern
 
-                Match matchFlintfox = Regex.Match(emailAddress, pattern);
+                Match matchPattern1 = Regex.Match(emailAddress, pattern);
 
-                if (matchFlintfox.Success)
+                if (matchPattern1.Success)
                 {
-                    logo = "flintfox";
-                    //imageBytes = File.ReadAllBytes(@"C:\\pictures\\flintfox.png");
-                    imageBytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Logos", "flintfox.png"));
+                    logo = "";
+                    imageBytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Logos", "logo1.png"));
                     string imageBytes64 = Convert.ToBase64String(imageBytes);
 
                     return imageBytes64;
                 }
-                else if (!matchFlintfox.Success)
+                else if (!matchPattern1.Success)
                 {
-                    pattern = "\\bflintech.com";
+                    pattern = $@"\b[A-Za-z0-9._%+-]+{escapedNamespace2}\b";  // Build the pattern
 
-                    Match matchFlintech = Regex.Match(emailAddress, pattern);
+                    Match matchPattern2 = Regex.Match(emailAddress, pattern);
 
-                    if (matchFlintech.Success)
+                    if (matchPattern2.Success)
                     {
-                        logo = "flintech";
-                        //imageBytes = File.ReadAllBytes(@"C:\\pictures\\flintech.png");
-                        imageBytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Logos", "flintech.png"));
+                        logo = "logo2";
+                        imageBytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Logos", "logo2.png"));
                         string imageBytes64 = Convert.ToBase64String(imageBytes);
 
                         return imageBytes64;
