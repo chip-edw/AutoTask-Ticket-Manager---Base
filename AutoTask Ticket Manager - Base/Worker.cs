@@ -239,7 +239,7 @@ namespace AutoTaskTicketManager_Base
                 {
                     if (Authenticate.GetExpiresOn() > DateTime.UtcNow)
                     {
-                        // just to give some visual indication on the console that the roop is still running
+                        // just to give some visual indication on the console that the loop is still running
                         Console.WriteLine("");
 
                         //Looping and loading each plugin before we start processing.
@@ -287,7 +287,7 @@ namespace AutoTaskTicketManager_Base
                             _logger.Verbose("...");
                             _logger.Verbose($"No Messages to Process pausing for {timeDelay} seconds. \nSet in SQL DB AppConfig Table under TimeDelay");
                             _logger.Verbose("Worker Loop - Pre Schedule");
-                            await Task.Delay(timeDelay, cancellationToken); //Pausing for seconds set in SQL DB AppConfig Table under TimeDelay
+                            await Task.Delay(timeDelay, cancellationToken); //Pausing for seconds set in SQL DB ConfigStore Table under TimeDelay
 
                         }
 
@@ -324,8 +324,8 @@ namespace AutoTaskTicketManager_Base
 
 
         /// <summary>
-        /// Holds the Logic for calling methods or performing background work. Currently just being used to helo manage the cancellatioin Token.
-        /// It will look ecery 1 second for a cancellationToken to be issued.
+        /// Holds the Logic for calling methods or performing background work. Currently just being used to help manage the cancellatioin Token.
+        /// It will look every 1 second for a cancellationToken to be issued.
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
