@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": [
+      "source.fixAll"
+  ],
+  "eslint.validate": [
+      "javascript",
+      "javascriptreact"
+  ],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true
+}
