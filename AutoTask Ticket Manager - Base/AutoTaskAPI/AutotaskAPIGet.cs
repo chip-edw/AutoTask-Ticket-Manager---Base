@@ -91,6 +91,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
                 throw new ArgumentNullException(nameof(picklistService), "picklistService is null in PicklistInformation.");
             }
 
+            // Loads the Ticket Entity Picklists
             picklistService.GetPicklistInformationAsync().Wait();
 
             return Task.CompletedTask;
@@ -275,7 +276,7 @@ namespace AutoTaskTicketManager_Base.AutoTaskAPI
 
             #region Request Body
             // The Status Value in the Body is the Value for the Status of 'Complete'
-            // The queueID value is the value for 'Flintfox Application Support'
+            // The queueID value is the value for 'Application Support'
             var body = @"{
                 " + "\n" +
                 @"  ""MaxRecords"": 500,

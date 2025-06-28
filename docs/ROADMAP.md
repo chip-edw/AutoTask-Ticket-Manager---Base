@@ -31,14 +31,42 @@ Focus: Core functionality to manage setup, encryption, and ticket visibility.
 - [x] `MaintenanceController` created using best practices
 - [x] Company Settings Admin UI completed
 - [x] Subject Exclusion Keywords model, DTO, service implemented
+
+**🔐 Management API**
 - [ ] Secure API Key Authentication Middleware
-- [ ] Basic Ticket Listing and Dashboard UI
 - [ ] Implement Management API endpoints:
   - [ ] `/api/scheduler/reload`
   - [x] `/api/email/check` (initial integration in Worker service)
   - [x] `/api/config/update` (via StartupConfiguration updates)
   - [ ] `/api/status/health`
+
+**🧾 Ticket UI & Dashboard**
+- [x]  Full Ticket CRUD API (`/api/v1/tickets/*`)
+- [x]  Ticket Listing UI (sortable table, live API integration)
+- [x]  Ticket Detail View with Edit functionality
+- [x]  Real-time AutoTask metadata integration (statuses, queues, priorities)
+- [x]  Manual Ticket Creation via WebUI forms
+- [x]  Ticket Update with PATCH-based efficient updates
+- [x]  AutoTask picklist integration for consistent dropdowns
+- [ ] 📋 **PLANNED:** Ticket Filtering (by queueName, status, companyName)
+- [ ] 📋 **PLANNED:** Basic Dashboard Metrics (ticket count summaries, trend indicators)
+
+
+**🖥️ Client Integration**
 - [ ] Lightweight Windows Desktop Client (initial interface)
+
+---
+
+### 🔄 Current Sprint: BASIC CRUD Completion
+
+**Sprint Goal:** Complete full ticket CRUD operations with AutoTask integration
+
+- [x] ✅ **COMPLETED:** Edit Ticket form with real AutoTask picklists
+- [ ] 🔄 **IN PROGRESS:** Fix Create New Ticket form to use real metadata (remove hardcoded values)
+- [ ] 🔄 **IN PROGRESS:** Add AutoTask Resources to backend metadata endpoint
+- [ ] 🔄 **IN PROGRESS:** Add Resource assignment dropdown to Create and Edit forms
+- [ ] 📋 **PLANNED:** Testing and validation of complete CRUD workflow
+
 
 ---
 
@@ -46,7 +74,7 @@ Focus: Core functionality to manage setup, encryption, and ticket visibility.
 
 Focus: Expanding functionality, improving collaboration, optional cloud backend.
 
-- Full Ticket Management interface (Create, Update, Assign)
+- Full Ticket Management interface (Create, Update, Assign, bulk operations, advanced filtering)
 - Opportunity Dashboard (CRM light overlay)
 - Microsoft Teams Chat Updates for Ticket/Opportunity Changes
 - Microsoft Planner Task Auto-Creation from Tickets
@@ -102,6 +130,36 @@ This design was adopted to avoid a large-scale refactor due to static method usa
 
 ---
 
+#### 🔐 Planned Infrastructure Enhancements (v1.1+)
+
+**Rate Limiting Middleware**
+
+Introduce request rate limiting to prevent abuse and allow for eventual SaaS-ready controls.
+
+**Why It's Needed:**  
+- Protect the API from being overwhelmed by bad actors or runaway clients  
+- Enable future tenant-specific quotas or developer plans  
+- Improve resilience and uptime under load  
+
+**Implementation Options:**  
+- Use `AspNetCoreRateLimit` NuGet package for IP-based throttling  
+- Consider policy-based limits (per route, per key, etc.)  
+- Future enhancement: tie into API key system when multi-tenant
+
+**Tasks:**  
+- [ ] Add NuGet package and base configuration for IP/route limiting  
+- [ ] Integrate into ASP.NET middleware pipeline  
+- [ ] Expose `/api/status/limits` (optional, debug-use)  
+- [ ] Document usage and customization in AdminDocs  
+
+**Target Release:** `v1.1`  
+**Status:** 🧭 Planned  
+**Tags:** `[Security]`, `[Middleware]`, `[Scalability]`, `[RateLimiting]`
+
+
+
+---
+
 #### 🔌 Planned Plugin Modules (v1.1+ and Beyond)
 
 **Pluggable Auto-Assign Rules Engine**
@@ -115,3 +173,53 @@ public interface IAutoAssignPlugin
 {
     int? ResolveAssigneeId(TicketContext context);
 }
+
+```
+
+---
+
+## 🏗️ Architecture Achievements
+
+**Current Tech Stack:**
+- **Backend:** .NET 8 + Entity Framework Core + SQLite
+- **Frontend:** React 18 + Vite + Material-UI + Tailwind CSS
+- **API Integration:** AutoTask REST API + Microsoft Graph API
+- **Logging:** Serilog with structured logging
+
+**API Architecture:**
+- RESTful design with proper HTTP status codes
+- PATCH-based updates for efficient data transfer
+- Real-time metadata loading from AutoTask
+- Proper error handling and logging throughout
+- Dependency injection and service layer pattern
+
+**Data Flow:**
+- React forms → API calls → AutoTask integration → Real-time UI updates
+- In-memory caching for performance (Companies, Picklists)
+- Efficient partial updates using PATCH methodology
+
+---
+
+## 🎯 Current Status Summary
+
+**✅ Major Achievements:**
+- Complete ticket CRUD operations with AutoTask integration
+- Modern React-based WebUI with Material-UI components
+- Real-time AutoTask metadata integration
+- Efficient PATCH-based update system
+- Comprehensive API documentation and error handling
+
+**🔄 Current Focus:**
+- Completing AutoTask Resources integration
+- Finalizing Create form improvements
+- Polishing CRUD workflow for production readiness
+
+**📋 Next Priority:**
+- Advanced filtering and search capabilities
+- Dashboard metrics and reporting
+- Plugin framework for extensibility
+
+---
+
+✅ **MVP Status:** Core ticket management functionality is complete and production-ready. 
+Focus has shifted to enhancing user experience and preparing for broader deployment.

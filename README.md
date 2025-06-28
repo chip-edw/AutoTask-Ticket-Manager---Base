@@ -1,4 +1,5 @@
 ﻿# ATTMS: AutoTask Ticket Manager Service & Lightweight ITSM Platform
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ---
 
@@ -72,6 +73,31 @@ Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**
     StartupConfiguration.GetProtectedSetting("ClientSecret");
     ```
 
+### 🎨 Frontend Styling with Tailwind CSS
+
+ATTMS uses **Tailwind CSS v3.4.3** for its Admin UI components.
+
+> ⚠️ Note: Tailwind v4 introduced a new PostCSS plugin format that caused color and utility classes to be omitted during Vite builds in our JSX-based setup.  
+> We are intentionally using Tailwind v3.4.3 for stability during MVP development.
+
+See [`docs/dev/tailwind.md`](./docs/dev/tailwind.md) for configuration details.
+
+
+ ### 🧠 Company Cache (`Companies.companies`)
+
+ATTMS maintains an in-memory observable dictionary of AutoTask companies using the `Companies.companies` structure.  
+This cache is loaded at application startup or refreshed manually via the Maintenance API.
+
+It is used to enrich ticket data with company names in the Ticket Management screen.
+
+> ⚠️ If a new company is created in AutoTask and is assigned to a ticket,
+> it will **not appear correctly in the UI** until the Maintenance task is rerun to refresh the cache.
+
+This design avoids unnecessary database lookups and keeps runtime processing fast and lightweight.
+
+To view the current dictionary, use the internal Management API or UI tools under the **Company Settings** screen.
+
+
 ---
 
 ## 📦 Storage Strategy
@@ -95,8 +121,6 @@ Now, ATTMS has been fully refactored to embrace **modern .NET 8 best practices**
 - Certificates, file handling, and process management written to handle both OS families gracefully
 
 ---
-
-## 🗺️ Roadmap
 
 ## 🗺️ Roadmap
 
@@ -136,10 +160,27 @@ offering companies a flexible, low-cost enhancement to their existing systems.
 
 ## 📜 License
 
-Planned for **MIT License** upon open-source release.  
-Commercial consulting, deployment, and plugin customization services may be available separately.
+ATTMS is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+You are free to:
+
+- Use, modify, and deploy this software
+- Share changes, provided you also share your source code under the same license
+- Run ATTMS internally or on a public server
+
+You may **not**:
+
+- Re-license or sell the software without also open-sourcing your modifications
+- Use this code in proprietary software without obtaining a separate commercial license
+
+For full license terms, see the [LICENSE](./LICENSE) file.
 
 ---
+
+💼 **Need help customizing or deploying ATTMS?**  
+I offer consulting services and implementation support.  
+Reach out at [chip@chip-edwards.com](mailto:chip@chip-edwards.com).
+
 
 # 📚 Documentation
 

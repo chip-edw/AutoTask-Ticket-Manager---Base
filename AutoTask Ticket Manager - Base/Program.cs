@@ -124,33 +124,46 @@ namespace AutoTaskTicketManager_Base
 
         private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
-            //Register IConfiguration as singleton
             services.AddSingleton(configuration);
-
-            //Register Worker as a scoped dependency
             services.AddScoped<IWorkerService, Worker>();
-
-            //Register the safe wrapper that uses a scoped Worker
             services.AddHostedService<ScopedWorkerHostedService>();
+
+            // Load allowed origins from config
+            var allowedOrigins = configuration.GetSection("AllowedFrontEndOrigins").Get<string[]>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", builder =>
+                {
+                    builder.WithOrigins(allowedOrigins!)
+                           .AllowAnyHeader()
+                           .AllowAnyMethod();
+                });
+            });
         }
+
 
 
         private static void ConfigureEndpoints(WebApplication app, int managementApiPort)
         {
+            // Enable CORS globally
+            app.UseCors("AllowFrontend");
+
             // GLOBAL ROUTING
             app.UseRouting();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
 
-            // Protect only /api/setup with localhost-only middleware
+            // Protect setup endpoint
             app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/setup"), setupApp =>
             {
                 setupApp.UseMiddleware<AutoTaskTicketManager_Base.Common.Middleware.LocalhostOnlyMiddleware>();
             });
 
-            // default root endpoint
+            // Root endpoint
             app.MapGet("/", (IServiceProvider services) =>
             {
                 var server = services.GetRequiredService<IServer>();
@@ -161,9 +174,10 @@ namespace AutoTaskTicketManager_Base
                 return $"Management API is UP and listening on: {listeningUrl}";
             });
 
-            // Map legacy endpoints
+            // Legacy
             ManagementAPI.ManagementAPI.Map(app);
         }
+
 
 
         private static void AttachGlobalHandlers()

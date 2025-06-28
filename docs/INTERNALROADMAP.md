@@ -1,4 +1,4 @@
-# ATTMS Internal Roadmap
+﻿# ATTMS Internal Roadmap
 
 ---
 
@@ -7,6 +7,21 @@
 - Finalize MaintenanceController for AdminUI-driven dictionary and list reloads
 - Implement AdminUI Maintenance Form with Master Reload and Selective Reload capabilities
 - Complete AdminUI Role-Based Access Control (RBAC) foundations
+
+### 🧩 Branch: feature/rename-adminui-add-tickets-ui
+
+#### Goal:
+Rename `AdminUI/` to `WebUI/` to support a unified, role-driven interface for both users and administrators. Scaffold and begin development of the user-facing Ticket module.
+
+#### TODOs:
+- [ ] Rename `AdminUI/` folder to `WebUI/`
+- [ ] Update all import paths and references (e.g., Vite config, TypeScript aliases, etc.)
+- [ ] Create `WebUI/pages/tickets/` folder and add `TicketTable.jsx`
+- [ ] Create API hook or service module under `WebUI/services/tickets/`
+- [ ] Connect to backend endpoint `/api/v1/tickets`
+- [ ] Add route for `/tickets` and ensure role-gated access
+- [ ] Confirm successful render with ticket list MVP (ticket number, title, status, etc.)
+- [ ] Commit and push with clear messages (e.g., `rename: AdminUI to WebUI`, `feat: scaffold ticket module`)
 
 ---
 

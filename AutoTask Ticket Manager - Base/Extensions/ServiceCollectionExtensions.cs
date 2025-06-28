@@ -5,6 +5,7 @@ using AutoTaskTicketManager_Base.Models;
 using AutoTaskTicketManager_Base.MSGraphAPI;
 using AutoTaskTicketManager_Base.Scheduler;
 using AutoTaskTicketManager_Base.Services;
+using AutoTaskTicketManager_Base.Services.Tickets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using PluginContracts;
@@ -39,13 +40,15 @@ namespace AutoTaskTicketManager_Base.Extensions
             services.AddSingleton<PluginManager>();
             #endregion
 
-            #region Business Services
+            #region Business Services and Internal API
             services.AddScoped<IManagementService, ManagementService>();
             services.AddScoped<ICompanySettingsService, CompanySettingsService>();
             services.AddSingleton<StartupLoaderService>();
             services.AddScoped<EmailManager>();
             services.AddScoped<ISenderExclusionService, SenderExclusionService>();
             services.AddScoped<ISubjectExclusionService, SubjectExclusionService>();
+            services.AddScoped<ITicketUIService, TicketUIService>();
+
 
             #endregion
 
