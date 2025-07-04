@@ -90,7 +90,6 @@ Focus: Expanding functionality, improving collaboration, optional cloud backend.
 Focus: Public visibility, contribution readiness, cross-platform polish.
 
 - Publish Official Docker Image and Deployment Scripts
-- Optional Salesforce CRM Basic Integration
 - Public Contribution Guidelines (CONTRIBUTING.md)
 - Plugin SDK for extending ATTMS capabilities
 - Self-hosted Deployment Documentation (Azure, AWS, Linux/Windows)
@@ -175,6 +174,29 @@ public interface IAutoAssignPlugin
 }
 
 ```
+
+---
+
+**🧩 Confluence Sync Plugin**
+
+- Automatically update Confluence customer dashboards or wiki pages when tickets are created or modified
+- Target use case: Account Managers reviewing customer activity in real time
+- Mapping logic can link AutoTask Companies to Confluence Spaces and Pages
+- Triggered by ticket status changes, scheduler jobs, or webhook-style events
+- **Plugin Scope:** Runs independently, integrates via ATTMS plugin contract
+
+---
+
+**📣 Microsoft Teams Notification Plugin**
+
+- Sends updates to designated Teams channels when tickets are created, assigned, escalated, or resolved
+- Integrates with Microsoft Graph API to support @mentions and rich card formatting
+- Maps AutoTask Queues, Priorities, or Companies to Teams groups or channels
+- Use cases include:
+  - Real-time support team notifications
+  - Escalation alerts to leadership
+  - Assignment alerts to individual technicians
+- **Plugin Scope:** Fully isolated module, can be enabled/disabled per environment
 
 ---
 
