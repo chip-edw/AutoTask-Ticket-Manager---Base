@@ -184,13 +184,21 @@ Reach out at [chip@chip-edwards.com](mailto:chip@chip-edwards.com).
 
 # 📚 Documentation
 
-These documents provide deeper insights into ATTMS internals:
+These documents provide deeper insights into ATTMS internals and how to contribute:
 
 - [Email Processing Flow](docs/Email-Processing.md)
 - [Admin Maintenance Checklist](docs/Admin-Maintenance-Checklist.md)
+- [Contributing Guide](CONTRIBUTING.md)
 
 ---
 
 # 🚀 ATTMS — Modernize AutoTask Support and CRM Workflows
 
 > *"Because your ITSM platform should work for you, not the other way around."*
+
+---
+
+<sub>
+<strong>Keywords:</strong> AutoTask PSA, ITSM, Microsoft Graph API, Ticket Automation, Email to Ticket, CRM, Plugin Architecture, .NET 8 Worker Service, Microsoft 365 Integration, Open Source AutoTask Platform
+</sub>
+
